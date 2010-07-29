@@ -16,8 +16,19 @@ var Mustache = function() {
       "IMPLICIT-ITERATOR": true
     },
     context: {},
+    partialMaxDepth: 10,
 
     render: function(template, context, partials, in_recursion) {
+      var templateObj;
+      if (typeof template === 'object') {
+        templateObj = template;
+        if (templateObj.preMustacheFilter) {
+          template = templateObj.preMustacheFilter.call(templateObj, this,
+                                                        context, partials);
+        }
+        if (typeof template !== 'string')
+          template = String(templateObj);
+      }
       // reset buffer & set context
       if(!in_recursion) {
         this.context = context;
@@ -25,7 +36,7 @@ var Mustache = function() {
       }
 
       // fail fast
-      if(!this.includes("", template)) {
+      if(template.length === 0) {
         if(in_recursion) {
           return template;
         } else {
@@ -34,22 +45,24 @@ var Mustache = function() {
         }
       }
 
-      template = this.render_pragmas(template);
-      var html = this.render_section(template, context, partials);
+      var s = this.render_pragmas(template);
+      s = this.render_section(s, context, partials);
+      s = this.render_tags(s, context, partials, in_recursion);
+      
       if(in_recursion) {
-        return this.render_tags(html, context, partials, in_recursion);
+        if (templateObj && templateObj.postMustacheFilter) {
+          s = templateObj.postMustacheFilter.call(templateObj, s, this, context,
+                                                  partials);
+        }
+        return s;
       }
-
-      this.render_tags(html, context, partials, in_recursion);
     },
 
     /*
       Sends parsed lines
     */
     send: function(line) {
-      if(line != "") {
-        this.buffer.push(line);
-      }
+      this.buffer.push(line);
     },
 
     /*
@@ -85,13 +98,19 @@ var Mustache = function() {
     */
     render_partial: function(name, context, partials) {
       name = this.trim(name);
-      if(!partials || partials[name] === undefined) {
-        throw({message: "unknown_partial '" + name + "'"});
+      var partial;
+      if(!partials || (partial = partials[name]) === undefined) {
+        throw new Error("unknown_partial '" + name + "'");
       }
-      if(typeof(context[name]) != "object") {
-        return this.render(partials[name], context, partials, true);
-      }
-      return this.render(partials[name], context[name], partials, true);
+      if (!this.partialMaxDepth)
+        throw new Error('max recursion depth for mustache partials');
+      //if(typeof context[name] === "object") {
+      //  return this.render(partials[name], context[name], partials, true);
+      //};
+      --this.partialMaxDepth;
+      partial = this.render(partial, context, partials, true);
+      ++this.partialMaxDepth;
+      return partial;
     },
 
     /*
@@ -106,7 +125,7 @@ var Mustache = function() {
       // CSW - Added "+?" so it finds the tighest bound, not the widest
       var regex = new RegExp(this.otag + "(\\^|\\#)\\s*(.+)\\s*" + this.ctag +
               "\n*([\\s\\S]+?)" + this.otag + "\\/\\s*\\2\\s*" + this.ctag +
-              "\\s*", "mg");
+              "[\r\n]?", "mg");
 
       // for each {{#foo}}{{/foo}} section do...
       return template.replace(regex, function(match, type, name, content) {
@@ -149,11 +168,11 @@ var Mustache = function() {
       var that = this;
 
       var new_regex = function() {
-        return new RegExp(that.otag + "(=|!|>|\\{|%)?([^\\/#\\^]+?)\\1?" +
+        return new RegExp(that.otag +
+          "(=|!|>|\\{|%)?([^\\/#\\^].+?)\\1?" +
           that.ctag + "+", "g");
       };
 
-      var regex = new_regex();
       var tag_replace_callback = function(match, operator, name) {
         switch(operator) {
         case "!": // ignore comments
@@ -170,17 +189,27 @@ var Mustache = function() {
           return that.escape(that.find(name, context));
         }
       };
+      var regex = new_regex();
       var lines = template.split("\n");
       for(var i = 0; i < lines.length; i++) {
         lines[i] = lines[i].replace(regex, tag_replace_callback, this);
         if(!in_recursion) {
-          this.send(lines[i]);
+          this.send(this.expand_untouchables(lines[i]));
         }
       }
 
       if(in_recursion) {
-        return lines.join("\n");
+        return this.expand_untouchables(lines.join("\n"));
       }
+    },
+
+    /*
+      Replace {\{foo}} with {{foo}} (escaped)
+    */
+    expand_untouchables: function(template) {
+      if (!this.expand_untouchablesRE)
+        this.expand_untouchablesRE = new RegExp('{\\\\{(.+?)'+this.ctag);
+      return template.replace(this.expand_untouchablesRE, '{{$1}}');
     },
 
     set_delimiters: function(delimiters) {

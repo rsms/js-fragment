@@ -46,7 +46,7 @@
         // fragments can be updated at any time
         setTimeout(function(){
           // update the per-fragment context
-          frag.context.session.yearBorn = 1993;
+          frag.context.session.yearBorn = 1990;
           // update the global context
           context.session.username = "fred";
           // request that the fragment update itself
@@ -54,9 +54,9 @@
         }, 2000);
         
         // fragments are standard jQuery objects
-        setTimeout(function(){
+        /*setTimeout(function(){
           frag.slideUp(400, function(){ frag.remove(); });
-        }, 4000);
+        }, 4000);*/
         
         // you can retrieve a fragment template by querying fragment.templates
         var template = fragment.template('tests/markdown');
@@ -74,6 +74,12 @@
         // remote fetches are pipelined, meaning only one request is used to
         // load a remote template.
         fragment('remote.html', {session:{username:'john.doe'}}, function(err, frag){
+          if (err) throw err.stack;
+          $('body').append(frag.fadeIn(500));
+        });
+        
+        // any fragment can include mustache partials (even if they are remote)
+        fragment('remote-with-partial.html', {foo:"ikki"}, function(err, frag){
           if (err) throw err.stack;
           $('body').append(frag.fadeIn(500));
         });
@@ -134,11 +140,15 @@
 ## This is a level 2 title
 
 Some mustache power:
-{{#session}}You are logged in as [{{username}}](#account) and are {{age}} years old{{/session}}
-{{^session}}You are *not* logged in{{/session}}.
+{{#session}}
+  You are logged in as [{{username}}](#account){{#yearBorn}}, {{age}} years old{{/yearBorn}}.
+{{/session}}
+{{^session}}
+  You are *not* logged in.
+{{/session}}
 
     Oh thou
-    here be code. session.yearsOld = {{session.yearsOld}}
+    here be code. {\{foo}} = {{{foo}}}
 
 - Do this
 - Then this

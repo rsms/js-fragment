@@ -20,70 +20,16 @@
       return $(wrap).empty().append(value);
     }
   }
-
-  /**
-   * Process a template with context and return HTML
-   */
-  function processFragment(template, context) {
-    var html = template.html;
-    if (typeof html !== 'string') return ""; // todo: throw error?
-    var ctx = {
-      _template: template
-    };
-    ctx = $.extend(true, ctx, exports.context, context);
-    // always run through mustache if available
-    if (window.Mustache) {
-      if (template.id == 'remote.html')
-        console.log('ctx', ctx);
-      html = Mustache.to_html(html, ctx);
-    }
-    // if there's a custom type specified, try look up a preprocessor
-    if (template.type && template.type !== 'text/html') {
-      var pp = exports.fragment.preprocessors[template.type];
-      if (pp) {
-        html = pp(html, ctx);
-      } else if (window.console) {
-        console.warn("fragment.js: Don't know how to process content of type '"+
-                     template.type+"'");
-      }
-    }
-    return html;
-  }
   
   /**
    * The global context
    */
   exports.context = {};
-  
-  // creates a fragment from a template
-  function createFragment(template, context, asHTML, noProcessing) {
-    if (typeof context !== 'object') {
-      noPreprocessing = asHTML;
-      asHTML = context;
-      context = null;
-    }
-    var html;
-    if (!noPreprocessing) {
-      html = processFragment(template, context);
-    }
-    if (asHTML) {
-      return html;
-    }
-    var q = htmlToDOM(html);
-    if (template.classname)
-      q.attr('class', exports.fragment.classPrefix + template.classname);
-    q.context = context;
-    q.template = template;
-    q.update = function() {
-      q.html(processFragment(template, q.context));
-    }
-    return q;
-  }
 
   /**
    * Returns a new fragment (as a jQuery object or a HTML string)
    *
-   * fragment(id [,context] [,asHTML[, noPreprocessing]] [,callback]) -> new jQuery
+   * fragment(id [,context] [,asHTML[, noProcessing]] [,callback]) -> new jQuery
    * - fragment("foo")
    * - fragment("foo", {user:"john"})
    * - fragment("foo", {user:"john"}, function(err, frag) {...})
@@ -121,12 +67,12 @@
     }
     var template = exports.fragment.template.cache[id], frag;
     if (template) {
-      frag = createFragment(template, context, asHTML, noProcessing);
+      frag = template.createFragment(context, asHTML, noProcessing);
       if (callback) callback(null, frag);
     } else if (callback) {
       exports.fragment.template(id, function(err, template) {
         if (!err)
-          frag = createFragment(template, context, asHTML, noProcessing);
+          frag = template.createFragment(context, asHTML, noProcessing);
         callback(err, frag);
       });
     } else if (window.console) {
@@ -166,6 +112,73 @@
         .replace(classnameReservedStripRE, '');
     }
   }
+  $.extend(exports.fragment.Template.prototype, {
+    // creates a fragment
+    createFragment: function(context, asHTML, noProcessing) {
+      if (typeof context !== 'object') {
+        noProcessing = asHTML;
+        asHTML = context;
+        context = null;
+      }
+      var html;
+      if (noProcessing) {
+        html = this.html;
+      } else {
+        html = this.processFragment(context);
+      }
+      if (asHTML) {
+        return html;
+      }
+      var q = htmlToDOM(html);
+      if (this.classname)
+        q.attr('class', exports.fragment.classPrefix + this.classname);
+      q.context = context;
+      q.template = this;
+      q.update = function() {
+        q.html(q.template.processFragment(q.context));
+      }
+      return q;
+    },
+    
+    // Process a template with context and return HTML
+    processFragment: function(context, preMustachedText) {
+      var html = this.html;
+      if (typeof html !== 'string') return ""; // todo: throw error?
+      var ctx = {_template: this};
+      ctx = $.extend(true, ctx, exports.context, context);
+      // always run through mustache if available
+      if (window.Mustache && !preMustachedText) {
+        var partials = exports.fragment.template.cache;
+        html = Mustache.to_html(html, ctx, partials);
+      } else {
+        html = preMustachedText;
+      }
+      // if there's a custom type specified, try look up a preprocessor
+      if (this.type && this.type !== 'text/html') {
+        var pp = exports.fragment.preprocessors[this.type];
+        if (pp) {
+          html = pp(html, ctx);
+        } else if (window.console) {
+          console.warn(
+            "fragment.js: Don't know how to process content of type '"+
+            this.type+"'");
+        }
+      }
+      return html;
+    },
+    
+    toString: function() {
+      return this.html;
+    },
+    
+    preMustacheFilter: function(mustacheRenderer, context, partials) {
+      return this.createFragment(context, true, true);
+    },
+    
+    postMustacheFilter: function(text, mustacheRenderer, context, partials) {
+      return this.processFragment(context, /*preMustachedText = */text);
+    }
+  });
 
   /**
    * Request a template.
