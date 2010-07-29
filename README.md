@@ -1,6 +1,6 @@
 # js-fragment
 
-Client-side templating for modern minds.
+Client-side templating for modern thinkers.
 
 ## Example
 
