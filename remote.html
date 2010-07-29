@@ -1,0 +1,11 @@
+<h2>From {{_template.id}}</h2>
+<p>
+  {{#session}}
+    Logged in as <a href="#account">{{username}}</a>
+    (<a href="#session/logout">Log out</a>)
+  {{/session}}
+  {{^session}}
+    <a href="#session/login">Log in</a>
+  {{/session}}
+  {{#foo}}<p>foo = {{foo}}</p>{{/foo}}
+</p>

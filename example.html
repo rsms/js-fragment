@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fragment</title>
+    <style type="text/css">
+      body {
+        background:white; color:#030303; padding:0; margin:2em;
+        font-family:helvetica,sans-serif; font-size:18px;
+        text-rendering: optimizelegibility;
+      }
+      img { border:none; }
+      a { text-decoration:none; }
+      frag { display:block; }
+    </style>
+    <script type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
+      ></script>
+    <script src="mustache.js" type="text/javascript" charset="utf-8"></script>
+    <script src="showdown.js" type="text/javascript" charset="utf-8"></script>
+    <script src="fragment.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      $(function(){
+        // append a simple fragment
+        $('body').append(fragment('header'));
+        
+        // add some data to the global context
+        context.foo = "<bar>";
+        context.session = {
+          username:'rsms',
+          age: function(){
+            return ((new Date).getYear()+1900) - this.yearBorn
+          }
+        };
+        
+        // append a new fragment which will be rendered slightly different
+        // because we changed the context
+        $('body').append(fragment('header'));
+        
+        // fragments can contain other types, like markdown. Also, we can pass
+        // a second per-fragment context as the second argument to fragment().
+        // This context will override members of the global context (deeply).
+        var frag = fragment('tests/markdown', {session:{yearBorn:1983}});
+        $('body').append(frag);
+        
+        // fragments can be updated at any time
+        setTimeout(function(){
+          // update the per-fragment context
+          frag.context.session.yearBorn = 1993;
+          // update the global context
+          context.session.username = "fred";
+          // request that the fragment update itself
+          frag.update();
+        }, 2000);
+        
+        // fragments are standard jQuery objects
+        setTimeout(function(){
+          frag.slideUp(400, function(){ frag.remove(); });
+        }, 4000);
+        
+        // you can retrieve a fragment template by querying fragment.templates
+        var template = fragment.template('tests/markdown');
+        if (window.console) {
+          console.log('template:', template);
+        }
+        
+        // if a fragment template was not found in the DOM and a callback is
+        // passed as the last argument, the fragment template is looked up
+        // through a HTTP request:
+        fragment('remote.html', function(err, frag){
+          if (err) throw err.stack;
+          $('body').append(frag.fadeIn(500));
+        });
+        // remote fetches are pipelined, meaning only one request is used to
+        // load a remote template.
+        fragment('remote.html', {session:{username:'john.doe'}}, function(err, frag){
+          if (err) throw err.stack;
+          $('body').append(frag.fadeIn(500));
+        });
+        
+        // requesting a template which does not exist results in an error,
+        // indicated by the first callback argument.
+        fragment('not/found', function(err, frag){
+          if (err) throw err.stack;
+        });
+        
+        // requesting a remote fragment works only for same host and port or if
+        // CORS is supported by the host (browser) and server.
+        fragment('http://hunch.se/stuff/thoughts-on-flash-by-steve-jobs.html', function(err, frag){
+          if (err) throw err.stack;
+          frag.prepend('<hr><p><em>This article came from '+frag.template.id+'</em></p>');
+          $('body').append(frag.fadeIn(500));
+        });
+        
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Fragment example</h1>
+    <p>
+      This example makes use of most features of <tt>fragment.js</tt>.
+      Have a look at the source for juicy details.
+    </p>
+    <!-- 
+      Fragment templates can be embedded in the DOM. They are stuffed away 
+      and removed from the document before the browser starts it's rendering, so
+      you will never see them nor will they affect the document.
+      
+      Templates make use of the Mustache templating "language". If mustache.js
+      is _not_ loaded, Mustache processing is not applied.
+    -->
+    <frag id="header">
+      <ul>
+        <li><a href="#about">About Crazy Cats Inc.</a></li>
+        {{#session}}
+          <li>Logged in as <a href="#account">{{username}}</a></li>
+          <li><a href="#session/logout">Log out</a></li>
+        {{/session}}
+        {{^session}}
+          <li><a href="#session/login">Log in</a></li>
+        {{/session}}
+      </ul>
+      {{#foo}}<p>foo = {{foo}}</p>{{/foo}}
+    </frag>
+    <!--
+      Fragment supports mime-type => preprocessor processing. A type attribute
+      of a fragment template (or the Content-Type header for remotely loaded
+      templates) denotes the type of content. Default is "text/html".
+      
+      For instance, if showdown.js is loaded, text/markdown and text/x-markdown
+      content will be converted into HTML.
+    -->
+    <frag id="tests/markdown" type="text/markdown">
+## This is a level 2 title
+
+Some mustache power:
+{{#session}}You are logged in as [{{username}}](#account) and are {{age}} years old{{/session}}
+{{^session}}You are *not* logged in{{/session}}.
+
+    Oh thou
+    here be code. session.yearsOld = {{session.yearsOld}}
+
+- Do this
+- Then this
+  - And don't forget that
+- Don't do those things
+    </frag>
+  </body>
+</html>
