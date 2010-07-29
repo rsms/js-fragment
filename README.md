@@ -24,7 +24,7 @@ Client-side templating for modern thinkers.
       </p>
     </frag>
 
-See [source of example.html](http://github.com/rsms/js-fragment/blob/master/example.html) for a complete set of features [and try it out in your browser](http://github.com/rsms/js-fragment/raw/master/example.html).
+See [source of example.html](http://github.com/rsms/js-fragment/blob/master/example.html) for a complete set of features [and try it out in your browser](http://hunch.se/js-fragment/example.html).
 
 ## MIT license
 
