@@ -153,6 +153,7 @@
       } else {
         html = preMustachedText;
       }
+      if (typeof html !== 'string') return ""; // todo: throw error?
       // if there's a custom type specified, try look up a preprocessor
       if (this.type && this.type !== 'text/html') {
         var pp = exports.fragment.preprocessors[this.type];
