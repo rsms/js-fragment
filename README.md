@@ -26,6 +26,13 @@ Client-side templating for modern thinkers.
 
 See [source of example.html](http://github.com/rsms/js-fragment/blob/master/example.html) for a complete set of features [and try it out in your browser](http://hunch.se/js-fragment/example.html).
 
+## Caveats
+
+- If Mustache processing is enabled, you must use the `mustache.js` file bundled with `fragment.js` (the one in this repository), since fragment.js requires two things which are not in the regular mustache.js:
+  - pre and post filter hooks (for partials) so we can perform our own processing (e.g. markdown)
+  - preserve whitespace so to not mess upp markdown or other space and crlf sensitive markup.
+- Bug: Sometimes `Mustache.to_html` or possibly preMustachedText while in a partial loop (inside `fragment.Template.prototype.processFragment`) return undefined instead of a proper string.
+
 ## MIT license
 
 Copyright (c) 2010 Rasmus Andersson <http://hunch.se/>
