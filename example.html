@@ -72,32 +72,32 @@
         // passed as the last argument, the fragment template is looked up
         // through a HTTP request:
         fragment('remote.html', function(err, frag){
-          if (err) throw err.stack;
+          if (err) throw err;
           $('body').append(frag.fadeIn(500));
         });
         // remote fetches are pipelined, meaning only one request is used to
         // load a remote template.
         fragment('remote.html', {session:{username:'john.doe'}}, function(err, frag){
-          if (err) throw err.stack;
+          if (err) throw err;
           $('body').append(frag.fadeIn(500));
         });
 
         // any fragment can include mustache partials (even if they are remote)
         fragment('remote-with-partial.html', {foo:"ikki"}, function(err, frag){
-          if (err) throw err.stack;
+          if (err) throw err;
           $('body').append(frag.fadeIn(500));
         });
 
         // requesting a template which does not exist results in an error,
         // indicated by the first callback argument.
         fragment('not/found', function(err, frag){
-          if (err) throw err.stack;
+          if (err) throw err;
         });
 
         // requesting a remote fragment works only for same host and port or if
         // CORS is supported by the host (browser) and server.
         fragment('http://hunch.se/stuff/thoughts-on-flash-by-steve-jobs.html', function(err, frag){
-          if (err) throw err.stack;
+          if (err) throw err;
           frag.prepend('<hr><p><em>This article came from '+frag.template.id+'</em></p>');
           $('body').append(frag.fadeIn(500));
         });
