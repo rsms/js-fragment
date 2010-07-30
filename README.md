@@ -33,7 +33,6 @@ Requires jQuery >= 1.4.
 - If Mustache processing is enabled, you must use the `mustache.js` file bundled with `fragment.js` (the one in this repository), since fragment.js requires two things which are not in the regular mustache.js:
   - pre and post filter hooks (for partials) so we can perform our own processing (e.g. markdown)
   - preserve whitespace so to not mess upp markdown or other space and crlf sensitive markup.
-- Bug: Sometimes `Mustache.to_html` or possibly preMustachedText while in a partial loop (inside `fragment.Template.prototype.processFragment`) return undefined instead of a proper string.
 - Dependency: jQuery >= 1.4
 
 ## MIT license
