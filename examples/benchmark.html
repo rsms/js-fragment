@@ -3,22 +3,13 @@
   <head>
     <meta charset="utf-8">
     <title>Fragment benchmark</title>
-    <style type="text/css">
-      body {
-        background:white; color:#030303; padding:0; margin:2em;
-        font-family:helvetica,sans-serif; font-size:18px;
-        text-rendering: optimizelegibility;
-      }
-      img { border:none; }
-      a { text-decoration:none; }
-      frag { display:inline; }
-    </style>
+    <link rel="stylesheet" href="screen.css" type="text/css" media="screen">
     <script type="text/javascript"
       src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
       ></script>
-    <script src="mustache.js" type="text/javascript" charset="utf-8"></script>
-    <script src="showdown.js" type="text/javascript" charset="utf-8"></script>
-    <script src="fragment.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../mustache.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../showdown.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../fragment.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
 
       function Benchmark(iterations, preTestFragmentID, postTestFragmentID) {
@@ -176,17 +167,13 @@
   <body>
     <h1>Fragment benchmark</h1>
     <button class="run">Run benchmarks</button>
-    <frag id="pre-test">
+    <frag fragment="pre-test">
       <hr>
       <span>{{title}} <small>({{iterations}} iterations)</small> ...</span>
     </frag>
-    <frag id="post-test">
-      <span>Done in {{times}}</span>
-    </frag>
-    <frag id="list-item">
-      <li>
-        <a href="some/thing/{{slug}}">{{name}}</a>
-      </li>
-    </frag>
+    <span fragment="post-test">Done in {{times}}</span>
+    <li fragment="list-item">
+      <a href="some/thing/{{slug}}">{{name}}</a>
+    </li>
   </body>
 </html>

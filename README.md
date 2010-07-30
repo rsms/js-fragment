@@ -15,14 +15,14 @@ Client-side templating for modern thinkers.
         });
       });
     </script>
-    <frag id="header" type="text/markdown">
+    <div fragment="header">
       <h1>{{siteTitle}}</h1>
       <p>
         Welcome
         {{#session}}back {{username}}!{{/session}}
         {{^session}}stranger.{{/session}}
       </p>
-    </frag>
+    </div>
 
 See [source of example.html](http://github.com/rsms/js-fragment/blob/master/example.html) for a complete set of features [and try it out in your browser](http://hunch.se/js-fragment/example.html).
 
@@ -37,7 +37,7 @@ Requires jQuery >= 1.4.
 
 ### TODO
 
-- Make Mustache `{{>partial}}`s asynchronous when needed (i.e. when the requested template is not yet loaded). Currently a partial must already be loaded when requested.
+- Make Mustache `{{>partial}}`s asynchronous. Needed when the requested template is not yet loaded. Currently a partial must already be loaded when requested.
 
 ## MIT license
 

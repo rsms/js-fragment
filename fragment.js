@@ -1,7 +1,7 @@
 (function(exports) {
   // first, some local helper functions (not exported)
 
-  // Unattached element used by htmlToJQuery
+  // Unattached element used by htmlWithSingleRootToJQuery
   var tempElement = document.createElement('span');
 
   /**
@@ -10,14 +10,24 @@
    * Currently only supports HTML with a root element (i.e. a single outer
    * element).
    */
-  function htmlToJQuery(html) {
+  function htmlWithSingleRootToJQuery(html) {
     tempElement.innerHTML = html;
     return $(tempElement.firstChild);
   }
   // fallback to slower method for other browsers
-  //function htmlToJQuery(html) {
+  //function htmlWithSingleRootToJQuery(html) {
   //  return $(tempElement).empty().append(html).contents();
   //}
+  
+  // like htmlWithSingleRootToJQuery, but takes any HTML and is slower
+  function htmlToJQuery(html) {
+    tempElement.innerHTML = html;
+    return $(tempElement).contents();
+  }
+  
+  function jQueryToHTML(q) {
+    return $(tempElement).empty().append(q).html();
+  }
 
   // remove comment nodes from a tree
   function removeCommentsR(node){
@@ -125,86 +135,111 @@
       classnameReservedSeparatorsRE = /[\/\.]+/g,
       classnameReservedStripRE = /[^a-zA-Z0-9_-]+/g;
 
+  function typeIsHTML(type) {
+    return !type || type === 'text/html';
+  }
+
+  // Preprocess text
+  function preprocess(text, type) {
+    var pp = exports.fragment.preprocessors[type];
+    if (pp) {
+      text = pp(text);
+    } else if (window.console) {
+      console.warn(
+        "fragment.js: Don't know how to process content of type '"+type+"'");
+    }
+    return text;
+  }
+  
+  containsMustacheRE = /\{\{[^\{\}]+\}\}/;
+  function textContainsMustache(text) {
+    return !!containsMustacheRE.test(text);
+  }
+
   /**
    * Template prototype constructor
    */
   exports.fragment.Template = function(id, content, type) {
-    var needMustachePostHtmlization = false;
+    var p, needMustachePostHtmlization = false;
     if (typeof id === 'object') {
       if (!(id instanceof jQuery))
         throw new Error('first argument must be a string or a jQuery object');
-      this.id = id.attr('id');
-      type = id.attr('type');
       content = id;
+      id = content.attr(exports.fragment.template.attrName);
+      if (id) {
+        content.removeAttr(exports.fragment.template.attrName);
+        if ((p = id.indexOf(':')) !== -1) {
+          type = id.substr(p+1);
+          id = id.substr(0, p);
+        }
+      }
     } else {
-      this.id = id;
       if (typeof content !== 'string')
         throw new Error('second argument must be a string');
       // encode mustache partial statements
       content = content.replace(/\{\{>/g, '{{&gt;');
-      needMustachePostHtmlization = true;
-      content = htmlToJQuery('<span>'+content+'</span>');
+      content = htmlWithSingleRootToJQuery('<'+exports.fragment.tagName+'>'+
+                                           content+
+                                           '</'+exports.fragment.tagName+'>');
     }
+    this.id = id;
     // make classname
     if (typeof this.id === "string") {
-      this.classname = this.id.replace(fnextRE, '')
-        .replace(classnameReservedSeparatorsRE, '-')
-        .replace(classnameReservedStripRE, '');
+      this.classname = exports.fragment.classPrefix +
+        this.id.replace(classnameReservedSeparatorsRE, '-')
+          .replace(classnameReservedStripRE, '');
     }
-    // save number of root nodes
-    var rootNodeCount = content.children().length;
-    // expand content to a string (innerHTML of content)
-    content = content.html();
-    // post-process string to HTML conversion for mustache
-    // e.g. "{{>included}}" is encoded and need to be decoded
-    if (needMustachePostHtmlization) {
+    // add classname to outer element
+    content.addClass(this.classname);
+    // convert content to HTML rep
+    content = jQueryToHTML(content);
+    // check if content contains mustache markup
+    this.containsMustache = textContainsMustache(content);
+    // extra checks for non-html content types
+    if (!typeIsHTML(type)) {
+      // preprocess if not HTML and no mustache involved
+      if (!this.containsMustache) {
+        content = preprocess(content, type);
+        type = null;
+        // todo: recalculate rootNodeCount
+      } else {
+        // still non-html content
+        this.type = type;
+      }
+    } else { // typeIsHTML(type) == true
+      // strip comments from HTML
+      if (content.indexOf('<!--') !== -1) {
+        var q = htmlWithSingleRootToJQuery('<x>'+content+'</x>');
+        removeComments(q);
+        content = q.html();
+      }
+      // trim away whitespace
+      content = strtrim(content);
+    }
+    // extract head and tail (wrapper)
+    if (strtrim(content).charAt(0) === '<') {
+      var startP = content.indexOf('<'), endP;
+      if (startP !== -1) {
+        endP = content.indexOf('>', startP);
+        if (endP) {
+          this.head = content.substring(startP, endP+1);
+          content = content.substr(endP+1);
+          startP = this.head.indexOf(' ');
+          if (startP === -1) startP = this.head.indexOf('>');
+          this.tail = '</'+this.head.substring(1, startP)+'>';
+          startP = content.lastIndexOf(this.tail);
+          if (startP !== -1) {
+            content = content.substr(0, startP);
+          }
+        }
+      }
+    }
+    // fix mustache partial statement
+    if (this.containsMustache) {
       content = content.replace(/\{\{&gt;/g, '{{>');
     }
-    // preprocess
-    if (type && type !== 'text/html') {
-      var pp = exports.fragment.preprocessors[type];
-      if (pp) {
-        content = pp(content, this);
-      } else if (window.console) {
-        console.warn(
-          "fragment.js: Don't know how to process content of type '"+type+"'");
-      }
-    }
-    // set class or wrap if needed
-    var classname = exports.fragment.classPrefix + this.classname;
-    if (rootNodeCount === 1) {
-      // inject/set classname
-      var classP = -1,
-          spP = content.indexOf(' '),
-          gtP = content.indexOf('>');
-      if (gtP > spP) {
-        spP = gtP;
-      } else {
-        classP = content.indexOf('class=', spP);
-      }
-      if (classP !== -1) {
-        classP += 6;
-        var x = content.charAt(classP);
-        classP += (x === '"' || x === "'") ? 1 : 0;
-        content = content.substr(0, classP) + classname +
-                  content.substr(classP);
-      } else {
-        content = content.substr(0, spP) + ' class="'+classname+'"' +
-                  content.substr(spP);
-      }
-    } else {
-      // wrap
-      content = '<'+exports.fragment.tagName + ' class="'+classname+'"' + '>' +
-                content + '</'+exports.fragment.tagName +'>';
-    }
-    // strip comments
-    if (content.indexOf('<!--') !== -1) {
-      var q = htmlToJQuery('<span>'+content+'</span>');
-      removeComments(q);
-      content = q.html();
-    }
-    // assign this.html and trim away whitespace
-    this.html = strtrim(content);
+    // keep final content
+    this.body = content;
   }
   $.extend(exports.fragment.Template.prototype, {
     // creates a fragment
@@ -216,9 +251,15 @@
       }
       var html;
       if (noProcessing) {
-        html = this.html;
+        html = this.body;
       } else {
-        html = this.processFragment(this.html, context);
+        html = this.processFragment(this.body, context);
+      }
+      if (this.head) {
+        html = this.head + html;
+      }
+      if (this.tail) {
+        html += this.tail;
       }
       if (asHTML) {
         return html;
@@ -227,7 +268,7 @@
       q.context = context;
       q.template = this;
       q.update = function() {
-        q.html(q.template.processFragment(q.template.html, q.context));
+        q.html(q.template.processFragment(q.template.body, q.context));
       }
       return q;
     },
@@ -241,6 +282,11 @@
         var ctx = $.extend(true, {_template: this}, exports.context, context);
         var partials = exports.fragment.template.cache;
         html = Mustache.to_html(html, ctx, partials);
+        if (!html) throw new Error('mustache failed');
+      }
+      // content converter
+      if (this.type) {
+        html = preprocess(html, this.type);
       }
       if (typeof html !== 'string')
         throw new Error("processFragment: internal inconsistency -- typeof html !== 'string'");
@@ -248,12 +294,28 @@
     },
 
     toString: function() {
-      return this.html;
+      var html = this.head ? this.head : '';
+      html += this.body;
+      if (this.tail) html += this.tail;
+      return html;
+    },
+    
+    preMustacheFilter: function(mustacheRenderer, context, partials) {
+      if (this.type) {
+        // this.type is something if the content is not HTML, in which case we
+        // don't want the head or tail
+        return this.body;
+      } else {
+        return this.toString();
+      }
     },
 
-    //postMustacheFilter: function(text, mustacheRenderer, context, partials) {
-    //  return this.processFragment(text, context, /*preMustached = */true);
-    //}
+    postMustacheFilter: function(text, mustacheRenderer, context, partials) {
+      var html = this.processFragment(text, context, /*preMustached = */true);
+      // Uncomment to add head and tail:
+      //if (this.type) html = this.head + html + this.tail;
+      return html;
+    }
   });
 
   /**
@@ -306,8 +368,8 @@
   // Requests in-flight queued by id
   exports.fragment.template.requestQueue = {};
 
-  // jQuery selector for templates (used by init())
-  exports.fragment.template.selector = exports.fragment.tagName;
+  // attribute name for embedded fragment templates
+  exports.fragment.template.attrName = "fragment";
 
   // Map which keeps the templates, keyed by fragment template id
   exports.fragment.template.cache = {};
@@ -317,9 +379,8 @@
    */
   exports.fragment.template.loadEmbedded = function() {
     // puts all fragments on the shelf and removes them from the document
-    $(exports.fragment.template.selector).each(function(){
-      var $this = $(this);
-      var t = new exports.fragment.Template($this.remove());
+    $('body').find('*['+exports.fragment.template.attrName+'*=]').each(function(){
+      var t = new exports.fragment.Template($(this).remove());
       if (t.id) exports.fragment.template.cache[t.id] = t;
     });
   }

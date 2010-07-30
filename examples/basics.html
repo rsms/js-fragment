@@ -3,22 +3,13 @@
   <head>
     <meta charset="utf-8">
     <title>Fragment</title>
-    <style type="text/css">
-      body {
-        background:white; color:#030303; padding:0; margin:2em;
-        font-family:helvetica,sans-serif; font-size:18px;
-        text-rendering: optimizelegibility;
-      }
-      img { border:none; }
-      a { text-decoration:none; }
-      frag { display:block; }
-    </style>
+    <link rel="stylesheet" href="screen.css" type="text/css" media="screen">
     <script type="text/javascript"
       src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
       ></script>
-    <script src="mustache.js" type="text/javascript" charset="utf-8"></script>
-    <script src="showdown.js" type="text/javascript" charset="utf-8"></script>
-    <script src="fragment.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../mustache.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../showdown.js" type="text/javascript" charset="utf-8"></script>
+    <script src="../fragment.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
       $(function(){
         // append a simple fragment
@@ -99,6 +90,7 @@
         fragment('http://hunch.se/stuff/thoughts-on-flash-by-steve-jobs.html', function(err, frag){
           if (err) throw err;
           frag.prepend('<hr><p><em>This article came from '+frag.template.id+'</em></p>');
+          frag.find('style').remove();
           $('body').append(frag.fadeIn(500));
         });
 
@@ -119,12 +111,10 @@
       Templates make use of the Mustache templating "language". If mustache.js
       is _not_ loaded, Mustache processing is not applied.
     -->
-    <frag id="list-item">
-      <li>
-        <a href="{{url}}">{{title}}</a>
-      </li>
-    </frag>
-    <frag id="header">
+    <li fragment="list-item">
+      <a href="{{url}}">{{title}}</a>
+    </li>
+    <div fragment="header">
       <!-- this comment will be removed from the template -->
 
       <ul>
@@ -139,7 +129,7 @@
         {{/session}}
       </ul>
       {{#foo}}<p>foo = {{foo}}</p>{{/foo}}
-    </frag>
+    </div>
     <!--
       Fragment supports mime-type => preprocessor processing. A type attribute
       of a fragment template (or the Content-Type header for remotely loaded
@@ -148,7 +138,7 @@
       For instance, if showdown.js is loaded, text/markdown and text/x-markdown
       content will be converted into HTML.
     -->
-    <frag id="tests/markdown" type="text/markdown">
+    <div fragment="tests/markdown:text/markdown">
 ## This is a level 2 title
 
 Some mustache power:
@@ -160,12 +150,13 @@ Some mustache power:
 {{/session}}
 
     Oh thou
-    here be code. {\{foo}} = {{foo}}
+    here be code. {\{foo}} = {{{foo}}}
+    <p>not converted to HTML</p>
 
 - Do this
 - Then this
   - And don't forget that
 - Don't do those things
-    </frag>
+    </div>
   </body>
 </html>
