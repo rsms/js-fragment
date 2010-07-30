@@ -1,24 +1,54 @@
 (function(exports) {
   // first, some local helper functions (not exported)
 
+  // Unattached element used by htmlToJQuery
+  var tempElement = document.createElement('span');
+
   /**
    * Returns a DOM fragment as a jQuery object, given a HTML string.
    *
-   * Discussion:
-   *   This is taken from jQuery core and optimized for our use-case. The
-   *   jQuery(html) and jQuery(obj).html(html) functions try to be "smart" and
-   *   guess the intentions of the caller (look up an id? load html? etc) which
-   *   messes with for instance markdown content which often start with a "#",
-   *   in which case jQuery tries to find an element with that id.
+   * Currently only supports HTML with a root element (i.e. a single outer
+   * element).
    */
-  function htmlToDOM(html) {
-    var wrap = document.createElement(exports.fragment.tagName);
-    try {
-      wrap.innerHTML = html;
-      return $(wrap);
-    } catch (e) {
-      return $(wrap).empty().append(value);
+  function htmlToJQuery(html) {
+    tempElement.innerHTML = html;
+    return $(tempElement.firstChild);
+  }
+  // fallback to slower method for other browsers
+  //function htmlToJQuery(html) {
+  //  return $(tempElement).empty().append(html).contents();
+  //}
+
+  // remove comment nodes from a tree
+  function removeCommentsR(node){
+    var i = 0, nodes = node.childNodes, n;
+    while ((n = nodes.item(i++))) {
+      switch (n.nodeType) {
+        case Node.ELEMENT_NODE:
+          removeCommentsR(n);
+          break;
+        case Node.COMMENT_NODE:
+          node.removeChild(n);
+          i--;
+      }
     }
+  }
+  function removeComments(jQueryObj) {
+    return $(jQueryObj).each(function(i) {
+      return removeCommentsR(this);
+    });
+  }
+  
+  // fast text trimming
+  function strtrim (str) {
+    str = str.replace(/^\s+/, '');
+    for (var i = str.length - 1; i >= 0; i--) {
+      if (/\S/.test(str.charAt(i))) {
+        str = str.substring(0, i + 1);
+        break;
+      }
+    }
+    return str;
   }
   
   /**
@@ -76,7 +106,7 @@
         callback(err, frag);
       });
     } else if (window.console) {
-      window.console.error('template not found: "'+id+'"');
+      console.error('template not found: "'+id+'"');
     }
     return frag;
   }
@@ -99,30 +129,82 @@
    * Template prototype constructor
    */
   exports.fragment.Template = function(id, content, type) {
-    if (typeof content === 'string') {
-      this.html = content;
+    var needMustachePostHtmlization = false;
+    if (typeof id === 'object') {
+      if (!(id instanceof jQuery))
+        throw new Error('first argument must be a string or a jQuery object');
+      this.id = id.attr('id');
+      type = id.attr('type');
+      content = id;
     } else {
-      this.html = $(content).html();
+      this.id = id;
+      if (typeof content !== 'string')
+        throw new Error('second argument must be a string');
+      // encode mustache partial statements
+      content = content.replace(/\{\{>/g, '{{&gt;');
+      needMustachePostHtmlization = true;
+      content = htmlToJQuery('<span>'+content+'</span>');
     }
-    this.html = this.html.replace(trimCRLFRE, '');
-    this.id = id;
-    this.type = type;
+    // make classname
     if (typeof this.id === "string") {
       this.classname = this.id.replace(fnextRE, '')
         .replace(classnameReservedSeparatorsRE, '-')
         .replace(classnameReservedStripRE, '');
     }
-    // if there's a custom type specified, try look up a preprocessor
-    if (this.type && this.type !== 'text/html') {
-      var pp = exports.fragment.preprocessors[this.type];
+    // save number of root nodes
+    var rootNodeCount = content.children().length;
+    // expand content to a string (innerHTML of content)
+    content = content.html();
+    // post-process string to HTML conversion for mustache
+    // e.g. "{{>included}}" is encoded and need to be decoded
+    if (needMustachePostHtmlization) {
+      content = content.replace(/\{\{&gt;/g, '{{>');
+    }
+    // preprocess
+    if (type && type !== 'text/html') {
+      var pp = exports.fragment.preprocessors[type];
       if (pp) {
-        this.html = pp(this.html, this);
+        content = pp(content, this);
       } else if (window.console) {
         console.warn(
-          "fragment.js: Don't know how to process content of type '"+
-          this.type+"'");
+          "fragment.js: Don't know how to process content of type '"+type+"'");
       }
     }
+    // set class or wrap if needed
+    var classname = exports.fragment.classPrefix + this.classname;
+    if (rootNodeCount === 1) {
+      // inject/set classname
+      var classP = -1,
+          spP = content.indexOf(' '),
+          gtP = content.indexOf('>');
+      if (gtP > spP) {
+        spP = gtP;
+      } else {
+        classP = content.indexOf('class=', spP);
+      }
+      if (classP !== -1) {
+        classP += 6;
+        var x = content.charAt(classP);
+        classP += (x === '"' || x === "'") ? 1 : 0;
+        content = content.substr(0, classP) + classname + 
+                  content.substr(classP);
+      } else {
+        content = content.substr(0, spP) + ' class="'+classname+'"' + 
+                  content.substr(spP);
+      }
+    } else {
+      // wrap
+      content = '<'+exports.fragment.tagName + ' class="'+classname+'"' + '>' +
+                content + '</'+exports.fragment.tagName +'>';
+    }
+    // strip comments
+    if (content.indexOf('<!--') !== -1) {
+      var q = htmlToJQuery('<span>'+content+'</span>');
+      removeComments(q);
+      content = q.html();
+    }
+    // assign this.html and trim away whitespace
+    this.html = strtrim(content);
   }
   $.extend(exports.fragment.Template.prototype, {
     // creates a fragment
@@ -136,36 +218,33 @@
       if (noProcessing) {
         html = this.html;
       } else {
-        html = this.processFragment(context);
+        html = this.processFragment(this.html, context);
       }
       if (asHTML) {
         return html;
       }
-      var q = htmlToDOM(html);
-      if (this.classname)
-        q.attr('class', exports.fragment.classPrefix + this.classname);
+      var q = htmlToJQuery(html);
       q.context = context;
       q.template = this;
       q.update = function() {
-        q.html(q.template.processFragment(q.context));
+        q.html(q.template.processFragment(q.template.html, q.context));
       }
       return q;
     },
     
     // Process a template with context and return HTML
-    processFragment: function(context, preMustachedText) {
-      var html = this.html;
-      if (typeof html !== 'string') return ""; // todo: throw error?
-      var ctx = {_template: this};
-      ctx = $.extend(true, ctx, exports.context, context);
+    processFragment: function(html, context, preMustached) {
+      if (typeof html !== 'string')
+        throw new Error("processFragment: bad input -- typeof html !== 'string'");
       // always run through mustache if available
-      if (window.Mustache && !preMustachedText) {
+      if (window.Mustache && !preMustached) {
+        var ctx = $.extend(true, {_template: this}, exports.context, context);
         var partials = exports.fragment.template.cache;
         html = Mustache.to_html(html, ctx, partials);
-      } else {
-        html = preMustachedText;
       }
-      return (typeof html === 'string') ? html : ""; // todo: investigate why
+      if (typeof html !== 'string')
+        throw new Error("processFragment: internal inconsistency -- typeof html !== 'string'");
+      return html;
     },
     
     toString: function() {
@@ -177,7 +256,7 @@
     },
     
     postMustacheFilter: function(text, mustacheRenderer, context, partials) {
-      return this.processFragment(context, /*preMustachedText = */text);
+      return this.processFragment(text, context, /*preMustached = */true);
     }
   });
 
@@ -200,7 +279,7 @@
       return t;
     } else if (!callback) {
       if (window.console)
-        window.console.error('template not found: "'+id+'"');
+        console.error('template not found: "'+id+'"');
       return;
     }
     var req = exports.fragment.template.requestQueue[id];
@@ -245,8 +324,7 @@
     // puts all fragments on the shelf and removes them from the document
     $(exports.fragment.template.selector).each(function(){
       var $this = $(this);
-      var t = new exports.fragment.Template($this.attr('id'), $this.remove(),
-                                            $this.attr('type'));
+      var t = new exports.fragment.Template($this.remove());
       if (t.id) exports.fragment.template.cache[t.id] = t;
     });
   }
