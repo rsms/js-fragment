@@ -35,6 +35,10 @@ Requires jQuery >= 1.4.
   - preserve whitespace so to not mess upp markdown or other space and crlf sensitive markup.
 - Dependency: jQuery >= 1.4
 
+### TODO
+
+- Make Mustache `{{>partial}}`s asynchronous when needed (i.e. when the requested template is not yet loaded). Currently a partial must already be loaded when requested.
+
 ## MIT license
 
 Copyright (c) 2010 Rasmus Andersson <http://hunch.se/>
