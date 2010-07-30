@@ -1,0 +1,8 @@
+body {
+  background:white; color:#030303; padding:0; margin:2em;
+  font-family:helvetica,sans-serif; font-size:18px;
+  text-rendering: optimizelegibility;
+}
+img { border:none; }
+a { text-decoration:none; }
+frag { display:inline; }
