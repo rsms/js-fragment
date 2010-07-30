@@ -105,8 +105,8 @@
           frag = template.createFragment(context, asHTML, noProcessing);
         callback(err, frag);
       });
-    } else if (window.console) {
-      console.error('template not found: "'+id+'"');
+    } else {
+      throw new Error('fragment template not found "'+id+'"');
     }
     return frag;
   }
@@ -278,9 +278,7 @@
       if (callback) callback(null, t);
       return t;
     } else if (!callback) {
-      if (window.console)
-        console.error('template not found: "'+id+'"');
-      return;
+      throw new Error('fragment template not found "'+id+'"');
     }
     var req = exports.fragment.template.requestQueue[id];
     if (req) {
@@ -298,10 +296,11 @@
             exports.fragment.template.cache[id] = t;
             for (var i=0;i<req.callbacks.length;++i)
               req.callbacks[i](null, t);
+            delete exports.fragment.template.requestQueue[id];
           } else {
             var msg = rsp.status ? rsp.statusText : 'Communication error';
             msg += ' ('+url+')';
-            callback(err || new Error(String(msg)));
+            callback(new Error(String(msg)));
           }
         }
       }); // ajax
