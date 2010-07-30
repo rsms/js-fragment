@@ -81,7 +81,8 @@
     return frag;
   }
   
-  // Type of element which will wrap each fragment
+  // Type of element which will wrap each fragment when there are multiple
+  // children in one fragment
   exports.fragment.tagName = 'frag';
   // Class prefix for new fragments. <frag class="{prefix}{id}">
   exports.fragment.classPrefix = '';
@@ -110,6 +111,17 @@
       this.classname = this.id.replace(fnextRE, '')
         .replace(classnameReservedSeparatorsRE, '-')
         .replace(classnameReservedStripRE, '');
+    }
+    // if there's a custom type specified, try look up a preprocessor
+    if (this.type && this.type !== 'text/html') {
+      var pp = exports.fragment.preprocessors[this.type];
+      if (pp) {
+        this.html = pp(this.html, this);
+      } else if (window.console) {
+        console.warn(
+          "fragment.js: Don't know how to process content of type '"+
+          this.type+"'");
+      }
     }
   }
   $.extend(exports.fragment.Template.prototype, {
@@ -153,19 +165,7 @@
       } else {
         html = preMustachedText;
       }
-      if (typeof html !== 'string') return ""; // todo: throw error?
-      // if there's a custom type specified, try look up a preprocessor
-      if (this.type && this.type !== 'text/html') {
-        var pp = exports.fragment.preprocessors[this.type];
-        if (pp) {
-          html = pp(html, ctx);
-        } else if (window.console) {
-          console.warn(
-            "fragment.js: Don't know how to process content of type '"+
-            this.type+"'");
-        }
-      }
-      return html;
+      return (typeof html === 'string') ? html : ""; // todo: investigate why
     },
     
     toString: function() {
