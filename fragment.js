@@ -38,7 +38,7 @@
       return removeCommentsR(this);
     });
   }
-  
+
   // fast text trimming
   function strtrim (str) {
     str = str.replace(/^\s+/, '');
@@ -50,7 +50,7 @@
     }
     return str;
   }
-  
+
   /**
    * The global context
    */
@@ -74,7 +74,7 @@
    * @param context
    *  Fragment instance-local context which will extend on the global context.
    *  Later accessible as fragment.context.
-   *                       
+   *
    * @param asHTML
    *  A true value results in a HTML string being returned instead of a fragment
    *  jQuery object.
@@ -110,7 +110,7 @@
     }
     return frag;
   }
-  
+
   // Type of element which will wrap each fragment when there are multiple
   // children in one fragment
   exports.fragment.tagName = 'frag';
@@ -118,13 +118,13 @@
   exports.fragment.classPrefix = '';
   // Content preprocessors keyed by mime type
   exports.fragment.preprocessors = {};
-  
+
   // Common regular expressions
   var trimCRLFRE = /^[\r\n]+|[\r\n]+$/g,
       fnextRE = /\.[^\.]+$/,
       classnameReservedSeparatorsRE = /[\/\.]+/g,
       classnameReservedStripRE = /[^a-zA-Z0-9_-]+/g;
-  
+
   /**
    * Template prototype constructor
    */
@@ -186,10 +186,10 @@
         classP += 6;
         var x = content.charAt(classP);
         classP += (x === '"' || x === "'") ? 1 : 0;
-        content = content.substr(0, classP) + classname + 
+        content = content.substr(0, classP) + classname +
                   content.substr(classP);
       } else {
-        content = content.substr(0, spP) + ' class="'+classname+'"' + 
+        content = content.substr(0, spP) + ' class="'+classname+'"' +
                   content.substr(spP);
       }
     } else {
@@ -231,7 +231,7 @@
       }
       return q;
     },
-    
+
     // Process a template with context and return HTML
     processFragment: function(html, context, preMustached) {
       if (typeof html !== 'string')
@@ -246,15 +246,15 @@
         throw new Error("processFragment: internal inconsistency -- typeof html !== 'string'");
       return html;
     },
-    
+
     toString: function() {
       return this.html;
     },
-    
+
     preMustacheFilter: function(mustacheRenderer, context, partials) {
       return this.createFragment(context, true, true);
     },
-    
+
     postMustacheFilter: function(text, mustacheRenderer, context, partials) {
       return this.processFragment(text, context, /*preMustached = */true);
     }
@@ -307,16 +307,16 @@
       }); // ajax
     }
   };
-  
+
   // Requests in-flight queued by id
   exports.fragment.template.requestQueue = {};
 
   // jQuery selector for templates (used by init())
   exports.fragment.template.selector = exports.fragment.tagName;
-  
+
   // Map which keeps the templates, keyed by fragment template id
   exports.fragment.template.cache = {};
-  
+
   /**
    * Load all templates found in the document
    */
@@ -328,14 +328,14 @@
       if (t.id) exports.fragment.template.cache[t.id] = t;
     });
   }
-  
+
   // When DOM is ready...
   $(function(){
     // try to detect some common preprocessors
-    if (window.Showdown !== undefined 
+    if (window.Showdown !== undefined
       && typeof Showdown.converter === 'function')
     {
-      exports.fragment.preprocessors['text/markdown'] = 
+      exports.fragment.preprocessors['text/markdown'] =
       exports.fragment.preprocessors['text/x-markdown'] =
         (new Showdown.converter()).makeHtml;
     }
