@@ -22,10 +22,10 @@ var Mustache = function() {
       var templateObj;
       if (typeof template === 'object') {
         templateObj = template;
-        if (templateObj.preMustacheFilter) {
-          template = templateObj.preMustacheFilter.call(templateObj, this,
-                                                        context, partials);
-        }
+        //if (templateObj.preMustacheFilter) {
+        //  template = templateObj.preMustacheFilter.call(templateObj, this,
+        //                                                context, partials);
+        //}
         if (typeof template !== 'string')
           template = String(templateObj);
       }
@@ -50,10 +50,10 @@ var Mustache = function() {
       s = this.render_tags(s, context, partials, in_recursion);
       
       if(in_recursion) {
-        if (templateObj && templateObj.postMustacheFilter) {
-          s = templateObj.postMustacheFilter.call(templateObj, s, this, context,
-                                                  partials);
-        }
+        //if (templateObj && templateObj.postMustacheFilter) {
+        //  s = templateObj.postMustacheFilter.call(templateObj, s, this, context,
+        //                                          partials);
+        //}
         return s;
       }
     },

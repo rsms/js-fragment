@@ -251,13 +251,9 @@
       return this.html;
     },
 
-    preMustacheFilter: function(mustacheRenderer, context, partials) {
-      return this.createFragment(context, true, true);
-    },
-
-    postMustacheFilter: function(text, mustacheRenderer, context, partials) {
-      return this.processFragment(text, context, /*preMustached = */true);
-    }
+    //postMustacheFilter: function(text, mustacheRenderer, context, partials) {
+    //  return this.processFragment(text, context, /*preMustached = */true);
+    //}
   });
 
   /**
