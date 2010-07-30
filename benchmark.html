@@ -1,0 +1,178 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fragment benchmark</title>
+    <style type="text/css">
+      body {
+        background:white; color:#030303; padding:0; margin:2em;
+        font-family:helvetica,sans-serif; font-size:18px;
+        text-rendering: optimizelegibility;
+      }
+      img { border:none; }
+      a { text-decoration:none; }
+      frag { display:inline; }
+    </style>
+    <script type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
+      ></script>
+    <script src="mustache.js" type="text/javascript" charset="utf-8"></script>
+    <script src="showdown.js" type="text/javascript" charset="utf-8"></script>
+    <script src="fragment.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+
+      function Benchmark(iterations, preTestFragmentID, postTestFragmentID) {
+        this.tests = [];
+        this.iterations = iterations || 1000;
+        this.preTestFragmentID = preTestFragmentID;
+        this.postTestFragmentID = postTestFragmentID;
+      }
+      
+      // clock() -> ms
+      if (window.chrome && chrome.csi) {
+        Benchmark.prototype.clock = function() { return chrome.csi().pageT; }
+      } else {
+        Benchmark.prototype.clock = function() { return (new Date).getTime(); }
+      }
+      
+      Benchmark.prototype.nextTick = function(fun) {
+        var self = this, timerId = setTimeout(function(){
+          fun.call(self);
+        }, 1);
+        return {cancel:function(){clearInterval(timerId);}}
+      }
+      
+      Benchmark.prototype.runTest = function(test, callback) {
+        var iterations = test.iterations || this.iterations;
+        if (this.preTestFragmentID) {
+          $('body').append(fragment(this.preTestFragmentID, {
+            iterations: iterations,
+            title: test.title || 'Untitled',
+            testBody: function(){
+              return String(fun);
+            }
+          }));
+        }
+        return this.nextTick(function(){
+          var error, Ctx = function(){};
+          Ctx.prototype.pre = test.pre;
+          Ctx.prototype.it = test.it;
+          Ctx.prototype.post = test.post;
+          var t = new Ctx;
+          var startClock = this.clock();
+          if (test.pre) {
+            t.pre();
+          }
+          if (test.it) {
+            try {
+              for (var i=0;i<iterations;++i) {
+                t.it(i);
+              }
+            } catch (err) {
+              error = err;
+            }
+          }
+          if (test.post) {
+            t.post();
+          }
+          var endClock = this.clock();
+          var time = endClock - startClock;
+          if (this.postTestFragmentID) {
+            $('body').append(fragment(this.postTestFragmentID, {
+              iterations: iterations,
+              error: error,
+              time: time, // milliseconds
+              times: function(){
+                return time.toFixed(0)+' ms';
+              }
+            }));
+          }
+          callback(error);
+        }, 1);
+      }
+      
+      Benchmark.prototype.run = function(callback) {
+        if (this.running) throw new Error('already running');
+        this.running = true;
+        var self = this, i = 0;
+        var next = function() {
+          var test = self.tests[i++];
+          if (!test) {
+            self.running = false;
+            return callback();
+          }
+          self.runTest(test, function(err){
+            if (err) {
+              self.running = false;
+              callback(err);
+            } else {
+              next();
+            }
+          });
+        }
+        next();
+      }
+      
+      Benchmark.prototype.push = function(test) {
+        this.tests.push(test);
+      }
+      
+      var benchmark = new Benchmark(10000, 'pre-test', 'post-test');
+      benchmark.push({title: 'Creating new <li> fragments',
+        //pre: function(){ this.$ul = $('<ul style="display:none"></ul>'); },
+        it: function(i){
+          fragment('list-item', {
+            slug:'item'+(i+1),
+            name:'Item #'+(i+1)
+          });
+        },
+        //post: function(){ $('body').append(this.$ul); }
+      });
+      benchmark.push({title: 'Creating new <li> fragments with html buffering',
+        pre: function(){
+          this.buffer = '';
+        },
+        it: function(i){
+          this.buffer += fragment('list-item', {
+            slug:'item'+(i+1),
+            name:'Item #'+(i+1)
+          }, true);
+        },
+        post: function(){
+          var fragment = $(this.buffer);
+        }
+      });
+      
+      $(function(){
+        $button = $('button.run');
+        $button.click(function(){
+          $button = $(this);
+          $('frag').remove();
+          benchmark.run(function(err){
+            if (err) console.error(err.stack || err);
+            $button.removeAttr('disabled');
+          });
+          $button.attr('disabled', 'disabled');
+        });
+        // run when page loads
+        setTimeout(function(){ $button.click() },1);
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Fragment benchmark</h1>
+    <button class="run">Start</button>
+    <frag id="pre-test">
+      <hr>
+      <p>{{title}} <small>({{iterations}} iterations)</small></p>
+    </frag>
+    <frag id="post-test">
+      <p>Done in {{times}}</p>
+    </frag>
+    <frag id="list-item">
+      <li>
+        <a href="some/thing/{{slug}}">{{name}}</a>
+      </li>
+    </frag>
+  </body>
+</html>
