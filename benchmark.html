@@ -27,21 +27,21 @@
         this.preTestFragmentID = preTestFragmentID;
         this.postTestFragmentID = postTestFragmentID;
       }
-      
+
       // clock() -> ms
       if (window.chrome && chrome.csi) {
         Benchmark.prototype.clock = function() { return chrome.csi().pageT; }
       } else {
         Benchmark.prototype.clock = function() { return (new Date).getTime(); }
       }
-      
+
       Benchmark.prototype.nextTick = function(fun) {
         var self = this, timerId = setTimeout(function(){
           fun.call(self);
         }, 1);
         return {cancel:function(){clearInterval(timerId);}}
       }
-      
+
       Benchmark.prototype.runTest = function(test, callback) {
         var iterations = test.iterations || this.iterations;
         if (this.preTestFragmentID) {
@@ -90,7 +90,7 @@
           callback(error);
         }, 1);
       }
-      
+
       Benchmark.prototype.run = function(callback) {
         if (this.running) throw new Error('already running');
         this.running = true;
@@ -112,13 +112,32 @@
         }
         next();
       }
-      
+
       Benchmark.prototype.push = function(test) {
         this.tests.push(test);
       }
-      
+
       var benchmark = new Benchmark(10000, 'pre-test', 'post-test');
-      benchmark.push({title: 'Creating new <li> fragments',
+
+      $(function(){
+        $button = $('button.run');
+        $button.click(function(){
+          $button = $(this);
+          $button.nextAll().remove();
+          benchmark.run(function(err){
+            if (err) console.error(err.stack || err);
+            $button.removeAttr('disabled');
+            $('body').append('<hr><p>Done.</p>');
+          });
+          $button.attr('disabled', 'disabled');
+        });
+        // run when page loads
+        setTimeout(function(){ $button.click() },1);
+      });
+
+      // ---------------------------------------------------------------------
+
+      benchmark.push({title: 'Creating new <li> DOM fragments',
         //pre: function(){ this.$ul = $('<ul style="display:none"></ul>'); },
         it: function(i){
           fragment('list-item', {
@@ -128,7 +147,16 @@
         },
         //post: function(){ $('body').append(this.$ul); }
       });
-      benchmark.push({title: 'Creating new <li> fragments with html buffering',
+      benchmark.push({title: 'Creating new <li> HTML fragments',
+        it: function(i){
+          fragment('list-item', {
+            slug:'item'+(i+1),
+            name:'Item #'+(i+1)
+          }, true);
+        }
+      });
+      benchmark.push({title:'Creating new <li> HTML fragments and '+
+                            'evaluating all afterwards in the DOM',
         pre: function(){
           this.buffer = '';
         },
@@ -142,32 +170,18 @@
           var fragment = $(this.buffer);
         }
       });
-      
-      $(function(){
-        $button = $('button.run');
-        $button.click(function(){
-          $button = $(this);
-          $('frag').remove();
-          benchmark.run(function(err){
-            if (err) console.error(err.stack || err);
-            $button.removeAttr('disabled');
-          });
-          $button.attr('disabled', 'disabled');
-        });
-        // run when page loads
-        setTimeout(function(){ $button.click() },1);
-      });
+
     </script>
   </head>
   <body>
     <h1>Fragment benchmark</h1>
-    <button class="run">Start</button>
+    <button class="run">Run benchmarks</button>
     <frag id="pre-test">
       <hr>
-      <p>{{title}} <small>({{iterations}} iterations)</small></p>
+      <span>{{title}} <small>({{iterations}} iterations)</small> ...</span>
     </frag>
     <frag id="post-test">
-      <p>Done in {{times}}</p>
+      <span>Done in {{times}}</span>
     </frag>
     <frag id="list-item">
       <li>
