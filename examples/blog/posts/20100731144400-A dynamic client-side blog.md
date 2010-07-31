@@ -12,6 +12,6 @@ Results in this output:
 - This post is of type **{{template.type}}**
 - ...and was published {{datePublished.toLocaleDateString}}
 
-Here's the contents of [this very post]({{postURLBase}}{{href}}):
+Here's the content of [this very post]({{postURLBase}}{{href}}):
 
 <pre>{{template.body}}</pre>
