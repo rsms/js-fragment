@@ -92,7 +92,8 @@ Post.fetchIndex = function(callback) {
   GET(context.postURLBase, function(err, data, rsp) {
     if (err) return callback(err);
     var links = findLinksInText(data), posts = [];
-    links.sort(function(a,b){ return a < b; }); // desc
+    links.sort();
+    links.reverse();
     links.forEach(function(href) {
       var post, m, t, cachedPost;
       if ((cachedPost = Post.cache.get(href))) {
