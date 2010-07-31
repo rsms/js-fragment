@@ -269,7 +269,7 @@ var Mustache = function() {
     */
     escape: function(s) {
       s = String(s === null ? "" : s);
-      return s.replace(/&(?!\w+;)|["<>\\]/g, function(s) {
+      s = s.replace(/&(?!\w+;)|["<>\\]/g, function(s) {
         switch(s) {
         case "&": return "&amp;";
         case "\\": return "\\\\";
@@ -279,6 +279,8 @@ var Mustache = function() {
         default: return s;
         }
       });
+      s = s.replace(/\{\{(.+?)\}\}/g, '{\\{$1}}');
+      return s;
     },
 
     // by @langalex, support for arrays of strings
@@ -347,11 +349,12 @@ var Mustache = function() {
       }
       renderer.render(template, view, partials);
       if (!send_fun) {
-        if (dontExpandUntouchables) {
-          return renderer.buffer.join("\n");
-        } else {
-          return renderer.expand_untouchables(renderer.buffer.join("\n"));
+        var s = renderer.buffer.join("\n");
+        if (!dontExpandUntouchables) {
+          s = renderer.expand_untouchables(s);
         }
+        //s = s.replace(/\{\\\\\{/g, '{\\{');
+        return s;
       }
     }
   });
