@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fragment blog</title>
+    <link rel="stylesheet" href="../screen.css" type="text/css" media="screen">
+    <style type="text/less" media="screen">
+      @right-column-width: 250px;
+      #right-column {
+        width:@right-column-width;
+        position:fixed; top:0; right:0;
+        background:yellow;
+        p {
+          margin: 1em;
+          a { color: red; }
+          a:hover { background:white; }
+        }
+      }
+      #left-column {
+        margin-right:@right-column-width;
+      }
+      div.post {
+        > h2 { margin-bottom: 0; }
+        img { max-width:100%; }
+        p.meta { font-size:0.8em; color:#999; margin-top:0.5em; }
+      }
+    </style>
+    <script type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
+      ></script>
+    <script src="../../mustache.js" type="text/javascript"
+      charset="utf-8"></script>
+    <script src="../../showdown.js" type="text/javascript"
+      charset="utf-8"></script>
+    <script src="../../fragment.js" type="text/javascript"
+      charset="utf-8"></script>
+    <script src="hunchor.js" type="text/javascript" charset="utf-8"></script>
+    <script src="less.js" type="text/javascript" charset="utf-8"></script>
+    <script src="utils.js" type="text/javascript" charset="utf-8"></script>
+    <script src="post.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      // setup our global context
+      context.postURLBase = 'posts/';
+      context.displayErrorDetails = true;
+
+      $(function(){
+        var postsFrag;
+        var siteTitle = document.title;
+
+        // add the about info to the right hand-side column
+        $('#right-column').append(fragment('about'));
+
+        // index
+        hunchor.on('', function(params, path, prevPath){
+          document.title = siteTitle;
+          Post.getIndex(function(err, loadedPosts, postsToLoad){
+            // already loaded posts
+            var posts = loadedPosts.map(function(post){ return post.rep(); });
+            if (!postsFrag) {
+              // create postsFrag lazily
+              postsFrag = fragment('posts', {posts:posts});
+            } else {
+              postsFrag.posts = posts;
+              postsFrag.update();
+            }
+            // todo: if postsToLoad.length, show "Loading"
+            $('#left-column').empty().append(postsFrag);
+          }, function(err, post) {
+            // post loaded
+            if (err) {
+              if (window.console) console.error(err.stack || err);
+            } else {
+              postsFrag.context.posts.push(post.rep());
+              postsFrag.update();
+            }
+          }, function(err, postsLoaded) {
+            // all loaded
+            // todo: if postsLoaded.length, remove "Loading"
+          });
+        });
+
+        // post
+        hunchor.on('posts/:href', function(params, path, prevPath){
+          // hunchor decodes parts we ask for in the url, but we want them
+          // encoded as the href is used as cache key.
+          params.href = encodeURIComponent(params.href);
+          document.title = siteTitle + ' → •••';
+          Post.get(params.href, function(err, post) {
+            var frag;
+            if (err) {
+              document.title = siteTitle + ' → Not found';
+              frag = fragment('post-not-found', {
+                href: params.href,
+                hrefPlain: decodeURIComponent(params.href),
+                error: err
+              });
+            } else {
+              document.title = siteTitle + ' → ' + post.title;
+              frag = fragment('post', post.rep());
+            }
+            $('#left-column').empty().append(frag.fadeIn(200));
+            window.scrollTo(0,0);
+          });
+        });
+
+        // about
+        hunchor.on('about', function(params, path, prevPath){
+          document.title = siteTitle + ' → About';
+          $('#left-column').empty().append(fragment('about').fadeIn(200));
+          window.scrollTo(0,0);
+        });
+
+      });
+    </script>
+  </head>
+  <body>
+    <h1><a href="#">Fragment blog</a></h1>
+    <div id="left-column">
+      <div fragment="post">
+        <h2><a href="#{{postURLBase}}{{href}}">{{title}}</a></h2>
+        <p class="meta">Published {{datePublished}}</p>
+        <p class="body">{{{body}}}</p>
+      </div>
+      <div fragment="error-details">
+        {{#displayErrorDetails}}
+          <hr>
+          <p class="error">
+            {{error}}
+          </p>
+          {{#error.stack}}
+            <pre class="error stack">{{error.stack}}</pre>
+          {{/error.stack}}
+        {{/displayErrorDetails}}
+      </div>
+      <div fragment="post-not-found">
+        <h2>Post not found</h2>
+        <p>No post at {{hrefPlain}}</p>
+        {{>error-details}}
+      </div>
+      <div fragment="posts">
+        {{#posts}}
+          {{>post}}
+        {{/posts}}
+        {{^posts}}
+          <p>No posts in this lonesome blog I'm afraid :(</p>
+        {{/posts}}
+      </div>
+    </div>
+    <div id="right-column">
+      <div fragment="about">
+        <p>
+          This is a simple example of a blog based on Fragment which requires no
+          server side processing, yet is dynamic.
+        </p>
+        <p>
+          Based on <a href="http://hunch.se/js-fragment/">Fragment</a>.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
