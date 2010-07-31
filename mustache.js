@@ -17,6 +17,7 @@ var Mustache = function() {
     },
     context: {},
     partialMaxDepth: 10,
+    decodeCurlyBraces: window.navigator.userAgent.indexOf('Firefox') !== -1,
 
     render: function(template, context, partials, in_recursion) {
       var templateObj;
@@ -29,6 +30,8 @@ var Mustache = function() {
       }
       if (typeof template !== 'string')
         template = String(template);
+      if (this.decodeCurlyBraces)
+        template = template.replace(/%7[Bb]/g, '{').replace(/%7[Dd]/g, '}');
       // reset buffer & set context
       if(!in_recursion) {
         this.context = context;
