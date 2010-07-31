@@ -174,8 +174,8 @@ Overview:
     {root}.fragment.Template.prototype.tail = <string>
     {root}.fragment.Template.prototype.type = <string>
     {root}.fragment.Template.prototype.classname = <string>
-    {root}.fragment.Template.prototype.createFragment([context,] [asHTML[, noProcessing]]) -> frag
-    {root}.fragment.Template.prototype.processFragment(html[, context[, preMustached]]) -> string
+    {root}.fragment.Template.prototype.createFragment([context,] [asHTML[, noProcessing[, dontExpandMustacheUntouchables]]]) -> frag
+    {root}.fragment.Template.prototype.processFragment(html[, context[, preMustached[, dontExpandMustacheUntouchables]]]) -> string
     
     [jQuery frag].prototype.context = {}
     [jQuery frag].prototype.template = Template

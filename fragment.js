@@ -199,9 +199,10 @@
     if (!typeIsHTML(type)) {
       // preprocess if not HTML and no mustache involved
       if (!this.containsMustache) {
+        content = content.replace(/&gt;/g, '>').replace(/&lt;/g, '<')
+          .replace(/&amp;/g, '&');
         content = preprocess(content, type);
         type = null;
-        // todo: recalculate rootNodeCount
       } else {
         // still non-html content
         this.type = type;
@@ -246,8 +247,10 @@
   }
   $.extend(exports.fragment.Template.prototype, {
     // creates a fragment
-    createFragment: function(context, asHTML, noProcessing) {
+    createFragment: function(context, asHTML, noProcessing,
+                             dontExpandMustacheUntouchables) {
       if (typeof context !== 'object') {
+        preMustached = noProcessing;
         noProcessing = asHTML;
         asHTML = context;
         context = null;
@@ -256,7 +259,8 @@
       if (noProcessing) {
         html = this.body;
       } else {
-        html = this.processFragment(this.body, context);
+        html = this.processFragment(this.body, context, false,
+                                    dontExpandMustacheUntouchables);
       }
       if (this.head) {
         html = this.head + html;
@@ -271,20 +275,23 @@
       q.context = context;
       q.template = this;
       q.update = function() {
-        q.html(q.template.processFragment(q.template.body, q.context));
+        q.html(q.template.processFragment(q.template.body, q.context, false,
+                                          dontExpandMustacheUntouchables));
       }
       return q;
     },
 
     // Process a template with context and return HTML
-    processFragment: function(html, context, preMustached) {
+    processFragment: function(html, context, preMustached,
+                              dontExpandMustacheUntouchables) {
       if (typeof html !== 'string')
         throw new Error("processFragment: bad input -- typeof html !== 'string'");
       // always run through mustache if available
       if (window.Mustache && !preMustached) {
         var ctx = $.extend(true, {_template: this}, exports.context, context);
         var partials = exports.fragment.template.cache;
-        html = Mustache.to_html(html, ctx, partials);
+        html = Mustache.to_html(html, ctx, partials,
+                                dontExpandMustacheUntouchables);
         if (!html) throw new Error('mustache failed');
       }
       // content converter
