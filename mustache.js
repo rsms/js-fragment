@@ -194,12 +194,12 @@ var Mustache = function() {
       for(var i = 0; i < lines.length; i++) {
         lines[i] = lines[i].replace(regex, tag_replace_callback, this);
         if(!in_recursion) {
-          this.send(this.expand_untouchables(lines[i]));
+          this.send(lines[i]);
         }
       }
 
       if(in_recursion) {
-        return this.expand_untouchables(lines.join("\n"));
+        return lines.join("\n");
       }
     },
 
@@ -208,7 +208,7 @@ var Mustache = function() {
     */
     expand_untouchables: function(template) {
       if (!this.expand_untouchablesRE)
-        this.expand_untouchablesRE = new RegExp('{\\\\{(.+?)'+this.ctag);
+        this.expand_untouchablesRE = new RegExp('{\\\\{(.+?)'+this.ctag, 'g');
       return template.replace(this.expand_untouchablesRE, '{{$1}}');
     },
 
@@ -333,15 +333,24 @@ var Mustache = function() {
 
     /*
       Turns a template and view into HTML
+      to_html(template[, context[, partials[, send_fun][, dontExpandUntouchables]]])
     */
-    to_html: function(template, view, partials, send_fun) {
+    to_html: function(template, view, partials, send_fun, dontExpandUntouchables) {
       var renderer = new Renderer();
-      if(send_fun) {
+      if (typeof send_fun === "boolean") {
+        dontExpandUntouchables = send_fun;
+        send_fun = null;
+      }
+      if (send_fun) {
         renderer.send = send_fun;
       }
       renderer.render(template, view, partials);
-      if(!send_fun) {
-        return renderer.buffer.join("\n");
+      if (!send_fun) {
+        if (dontExpandUntouchables) {
+          return renderer.buffer.join("\n");
+        } else {
+          return renderer.expand_untouchables(renderer.buffer.join("\n"));
+        }
       }
     }
   });
