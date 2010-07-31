@@ -130,7 +130,7 @@
   exports.fragment.preprocessors = {};
 
   // Common regular expressions
-  var domnameReservedRE = /[^a-zA-Z0-9_\.-]+/g;
+  var domnameReservedRE = /[^a-zA-Z0-9_-]+/g;
   function mkDOMName(title){
     return title.toLowerCase().replace(domnameReservedRE, '-')
       .replace(/\-+/g, '-');
