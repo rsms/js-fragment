@@ -5,6 +5,7 @@ Blog posts can contain Mustache processing and Markdown. For instance this code:
 
     - Posts are based in `{\{postURLBase}}`.
     - This post is of type **{\{template.type}}**
+    - ...and was published {\{datePublished.toLocaleDateString}}
 
 Results in this output:
 
