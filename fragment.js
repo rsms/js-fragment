@@ -401,9 +401,10 @@
     if (window.Showdown !== undefined
       && typeof Showdown.converter === 'function')
     {
+      var mdconverter = new Showdown.converter();
+      function md(text) { return mdconverter.makeHtml(text); }
       exports.fragment.preprocessors['text/markdown'] =
-      exports.fragment.preprocessors['text/x-markdown'] =
-        (new Showdown.converter()).makeHtml;
+        exports.fragment.preprocessors['text/x-markdown'] = md;
     }
     // Trigger loading of templates when the DOM is ready
     exports.fragment.template.loadEmbedded();
