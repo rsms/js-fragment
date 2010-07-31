@@ -49,7 +49,7 @@ var Mustache = function() {
       s = this.render_section(s, context, partials);
       s = this.render_tags(s, context, partials, in_recursion);
       
-      if(in_recursion) {
+      if (in_recursion) {
         if (templateObj && templateObj.postMustacheFilter) {
           s = templateObj.postMustacheFilter.call(templateObj, s, this, context,
                                                   partials);
