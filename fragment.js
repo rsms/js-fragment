@@ -142,6 +142,7 @@
 
   // Preprocess text
   function preprocess(text, type) {
+    if (!text) return text;
     var pp = exports.fragment.preprocessors[type];
     if (pp) {
       text = pp(text);
