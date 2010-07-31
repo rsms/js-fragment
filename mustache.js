@@ -207,9 +207,8 @@ var Mustache = function() {
       Replace {\{foo}} with {{foo}} (escaped)
     */
     expand_untouchables: function(template) {
-      if (!this.expand_untouchablesRE)
-        this.expand_untouchablesRE = new RegExp('{\\\\{(.+?)'+this.ctag, 'g');
-      return template.replace(this.expand_untouchablesRE, '{{$1}}');
+      return template.replace(/\{\\\{(.+?)\}\}/g, '{{$1}}')
+        .replace(/\{\\\\\{(.+?)\}\}/g, '{\\{$1}}');
     },
 
     set_delimiters: function(delimiters) {
