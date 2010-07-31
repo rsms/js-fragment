@@ -130,10 +130,11 @@
   exports.fragment.preprocessors = {};
 
   // Common regular expressions
-  var trimCRLFRE = /^[\r\n]+|[\r\n]+$/g,
-      fnextRE = /\.[^\.]+$/,
-      classnameReservedSeparatorsRE = /[\/\.]+/g,
-      classnameReservedStripRE = /[^a-zA-Z0-9_-]+/g;
+  var domnameReservedRE = /[^a-zA-Z0-9_\.-]+/g;
+  function mkDOMName(title){
+    return title.toLowerCase().replace(domnameReservedRE, '-')
+      .replace(/\-+/g, '-');
+  }
 
   function typeIsHTML(type) {
     return !type || type === 'text/html';
@@ -185,9 +186,7 @@
     this.id = id;
     // make classname
     if (typeof this.id === "string") {
-      this.classname = exports.fragment.classPrefix +
-        this.id.replace(classnameReservedSeparatorsRE, '-')
-          .replace(classnameReservedStripRE, '');
+      this.classname = exports.fragment.classPrefix + mkDOMName(this.id);
     }
     // add classname to outer element
     content.addClass(this.classname);
@@ -234,8 +233,11 @@
         }
       }
     }
-    // fix mustache partial statement
-    if (this.containsMustache) {
+    // decode HTML encoded stuff which shouldn't be encoded
+    if (this.type) {
+      content = content.replace(/&gt;/g, '>').replace(/&lt;/g, '<')
+        .replace(/&amp;/g, '&');
+    } else if (this.containsMustache) {
       content = content.replace(/\{\{&gt;/g, '{{>');
     }
     // keep final content
