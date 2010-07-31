@@ -236,8 +236,10 @@ var Mustache = function() {
       from the view object
     */
     find: function(name, context) {
-      var names = this.trim(name).split('.'), value = context, i;
+      var names = this.trim(name).split('.'),
+          value = context, i, parent = context;
       for (i=0;(name = names[i]);++i) {
+        parent = value;
         value = value[name];
         if (value === undefined && i === 0) {
           value = this.context[name];
@@ -250,7 +252,7 @@ var Mustache = function() {
       if (value === undefined) {
         return "";
       } else if (typeof value === "function") {
-        return value.apply(context);
+        return value.apply(names.length > 1 ? parent : context);
       }
       return value;
     },
