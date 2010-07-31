@@ -1,0 +1,211 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fragment</title>
+    <link rel="stylesheet" href="examples/screen.css" type="text/css" media="screen">
+    <script type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"
+      ></script>
+    <script src="mustache.js" type="text/javascript" charset="utf-8"></script>
+    <script src="showdown.js" type="text/javascript" charset="utf-8"></script>
+    <script src="fragment.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      $(function(){
+        $('body').append(fragment('body', {
+          links: [
+            {href:"examples/basics.html", title:"Basics", desc:"Covers most functionality"},
+            {href:"examples/benchmark.html", title:"Benchmark"},
+          ]
+        }));
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Fragment</h1><!-- for SEO purposes -->
+    <div fragment="body:text/markdown">
+Fragment is a sort of (browser) JavaScript templating toolkit.
+A *fragment* is like a view, but is much more light-weight than
+traditional templates. *Fragment templates* can be embedded in the
+document (and other fragments) or live in separate files.
+
+*Fragment templates* generate *fragments* which can be though of as
+*instances of templates with local contexts*.
+Each *fragment* is a regular jQuery object with some extra functionality, like
+a local `context` (a javascript object which is exposed to the fragment Mustache
+markup) and an `update` function which can be used to "redraw" the fragment if
+the global or local context has changed.
+
+You can grab the latest version from
+[http://github.com/rsms/js-fragment](http://github.com/rsms/js-fragment)
+
+## Introduction
+
+Here's a simple fragment template:
+
+    <ul fragment="list">
+    {\{#links}}
+      <li><a href="{\{href}}">{\{title}}</a></li>
+    {\{/links}}
+    </ul>
+
+Which we can create a new *fragment* instance of by calling the `fragment`
+function and then add it to our document:
+
+    var frag = fragment('list', {
+      links: [
+        {href: "http://www.google.com/", title: "Google"},
+        {href: "http://www.bing.com/", title: "Bing"}
+      ]
+    });
+    $('parent').append(frag);
+
+Suppose the `parent` element was empty before, this is now what it contains:
+
+    <parent>
+      <ul class="list">
+        <li><a href="http://www.google.com/">Google</a></li>
+        <li><a href="http://www.bing.com/">Bing</a></li>
+      </ul>
+    </parent>
+
+Now, let's change the context and update the fragment:
+
+    frag.context.links.push({ href: "http://yahoo.com/", title: "Yahoo!" });
+    frag.update();
+
+The content is now updated to reflect the most recent context:
+
+    <parent>
+      <ul class="list">
+        <li><a href="http://www.google.com/">Google</a></li>
+        <li><a href="http://www.bing.com/">Bing</a></li>
+        <li><a href="http://yahoo.com/">Yahoo!</a></li>
+      </ul>
+    </parent>
+
+### Including other fragments
+
+Since *Fragment* is powered by [Mustache](http://github.com/janl/mustache.js)
+we not only have markup and processing, but can also include other snippets,
+called "partials".
+
+Let's rewrite our list fragment and split up the list and the list item templates:
+
+    <ul fragment="bulleted-list">
+    {\{#links}}
+      {\{>list-item}}
+    {\{/links}}
+    </ul>
+    <ol fragment="numbered-list">
+    {\{#links}}
+      {\{>list-item}}
+    {\{/links}}
+    </ol>
+    <li fragment="list-item"><a href="{\{href}}">{\{title}}</a></li>
+
+When creating a fragment out of the `bulleted-list` or `numbered-list` template,
+`{\{>list-item}}` tells Mustache to include the `list-item` fragment template.
+The result from `bulleted-list` would be the same as before (in the previous
+examples). Partials enables us to re-use fragment templates and stay
+[DRY](http://en.wikipedia.org/wiki/Don't_repeat_yourself).
+
+### Loading remote fragment templates
+
+*Fragment* supports loading of templates in remote locations. Let's consider our
+previous list and list item templates. Let's move the `bulleted-list` template
+to a separate file called `bulleted-list.html`:
+
+    <ul>
+    {\{#links}}
+      {\{>list-item}}
+    {\{/links}}
+    </ul>
+
+We keep the `list-item` in our document during this example. Now, as loading
+remote resources obviously requires I/O and we must wait for it to complete, we
+invoke `fragment` with a callback function:
+
+    var context = {
+      links: [
+        {href: "http://www.google.com/", title: "Google"},
+        {href: "http://www.bing.com/", title: "Bing"}
+      ]
+    };
+    fragment('bulleted-list.html', context, function(err, frag){
+      if (err) throw err;
+      $('parent').append(frag);
+    });
+
+The `bulleted-list.html` is loaded and a template is created and cached for
+later, and finally a fragment instance is created and passed as the second
+argument to our callback. The first argument to callbacks are always an error
+(or a false value if there was no error).
+
+Remote templates can include other templates using the `{\{>name}}` construct
+since they are evaluated in the same execution context, technically speaking.
+
+## Examples
+
+{{#links}}
+- [{{title}}{{^title}}{{href}}{{/title}}]({{href}})
+  {{#desc}}-- {{desc}}{{/desc}}
+
+{{/links}}
+
+## API
+
+Overview:
+
+    {root}.context = {}
+    
+    {root}.fragment(id [,context] [,asHTML[, noProcessing]] [,callback]) -> frag
+    {root}.fragment.tagName = "frag"
+    {root}.fragment.classPrefix = ""
+    {root}.fragment.preprocessors = {}
+    
+    {root}.fragment.template(id [,callback(err, Template)]) -> Template
+    {root}.fragment.template.attrName = "fragment"
+    
+    {root}.fragment.Template() <constructor>
+    {root}.fragment.Template.prototype.id = <string>
+    {root}.fragment.Template.prototype.head = <string>
+    {root}.fragment.Template.prototype.body = <string>
+    {root}.fragment.Template.prototype.tail = <string>
+    {root}.fragment.Template.prototype.type = <string>
+    {root}.fragment.Template.prototype.classname = <string>
+    {root}.fragment.Template.prototype.createFragment([context,] [asHTML[, noProcessing]]) -> frag
+    {root}.fragment.Template.prototype.processFragment(html[, context[, preMustached]]) -> string
+    
+    [jQuery frag].prototype.context = {}
+    [jQuery frag].prototype.template = Template
+    [jQuery frag].prototype.update()
+
+
+By default, `{root}` is `window` (the outer JavaScript context in browsers), but
+can be changed by modifying the last line in `fragment.js`.
+
+### fragment(id [,context] [,asHTML[, noProcessing]] [,callback(err, frag)]) -> frag
+
+Create a new fragment from template `id`.
+
+Call style examples:
+
+- `fragment("foo") -> frag`
+  -- Returns a new fragment jQuery object for template with id `foo`.
+- `fragment("foo", {user:"john"}) -> frag`
+  -- Like above, but with a local context.
+- `fragment("foo", {user:"john"}, function(err, frag) {...})`
+  -- Like above, but invokes a callback, passing the fragment when loaded. Will
+  try to GET the template if no template with id `foo` can be found.
+- `fragment("foo", {user:"john"}, true) -> frag`
+  -- Returns a HTML string fragment of template `foo`
+- `fragment("foo", true, true) -> frag`
+  -- Returns an unprocessed HTML string fragment of template `foo`
+
+---
+
+Fragment -- [http://github.com/rsms/js-fragment](http://github.com/rsms/js-fragment)
+    </div>
+  </body>
+</html>
