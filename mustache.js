@@ -26,9 +26,9 @@ var Mustache = function() {
           template = templateObj.preMustacheFilter.call(templateObj, this,
                                                         context, partials);
         }
-        if (typeof template !== 'string')
-          template = String(templateObj);
       }
+      if (typeof template !== 'string')
+        template = String(template);
       // reset buffer & set context
       if(!in_recursion) {
         this.context = context;
