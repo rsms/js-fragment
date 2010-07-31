@@ -24,7 +24,7 @@ Client-side templating for modern thinkers.
       </p>
     </div>
 
-See [source of example.html](http://github.com/rsms/js-fragment/blob/master/example.html) for a complete set of features [and try it out in your browser](http://hunch.se/js-fragment/example.html).
+Read [the introduction](http://hunch.se/js-fragment/) or look at the [source of some examples](http://github.com/rsms/js-fragment/blob/master/examples/basics.html) and [try them out in your browser](http://hunch.se/js-fragment/examples/basics.html).
 
 Requires jQuery >= 1.4.
 
