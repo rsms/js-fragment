@@ -102,13 +102,14 @@ Showdown.converter = function() {
   // RA: if true and anchorPrefix is not false, headers will be linked
   this.anchorLinks = true;
 
-  this.makeHtml = function(text) {
   //
   // Main function. The order in which other subs are called here is
   // essential. Link and image substitutions need to happen before
   // _EscapeSpecialCharsWithinTagAttributes(), so that any *'s or _'s in the <a>
   // and <img> tags get encoded.
   //
+  this.makeHtml = function(text) {
+    if (!text) return text;
 
     // Clear the global hashes. If we don't clear these, you get conflicts
     // from other articles when generating a page which contains more than
