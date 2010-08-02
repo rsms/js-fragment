@@ -16,3 +16,4 @@ pre > code { background:inherit; padding:0; border:none; }
 h1 > a, h2 > a, h3 > a, h4 > a, h5 > a, h6 > a { color:inherit; }
 h1 > a:hover:after, h2 > a:hover:after, h3 > a:hover:after, h4 > a:hover:after,
   h5 > a:hover:after, h6 > a:hover:after { content:" #"; color:#ccc; }
+div.disclaimer { background:#f0cb1c; padding:1em 1.2em; }

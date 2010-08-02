@@ -58,32 +58,45 @@
         if (window.console) {
           console.log('template:', template);
         }
+        
+        // Remote templates
 
-        // if a fragment template was not found in the DOM and a callback is
-        // passed as the last argument, the fragment template is looked up
-        // through a HTTP request:
-        fragment('remote.html', function(err, frag){
-          if (err) throw err;
-          $('body').append(frag.fadeIn(500));
-        });
-        // remote fetches are pipelined, meaning only one request is used to
-        // load a remote template.
-        fragment('remote.html', {session:{username:'john.doe'}}, function(err, frag){
-          if (err) throw err;
-          $('body').append(frag.fadeIn(500));
-        });
+        // Since the following examples make use of files loaded locally, they
+        // will fail if we are "running" from a local file
+        if (document.location.protocol.indexOf('http') !== 0) {
+          $('body').append(fragment('disclaimer', {
+            html: '<p>You are running this from a local file — loading '+
+                  'templates from other files does not work in in this case. '+
+                  'It is a limitation of the web browser.</p>'
+          }));
+        } else {
 
-        // any fragment can include mustache partials (even if they are remote)
-        fragment('remote-with-partial.html', {foo:"ikki"}, function(err, frag){
-          if (err) throw err;
-          $('body').append(frag.fadeIn(500));
-        });
+          // if a fragment template was not found in the DOM and a callback is
+          // passed as the last argument, the fragment template is looked up
+          // through a HTTP request:
+          fragment('remote.html', function(err, frag){
+            if (err) throw err;
+            $('body').append(frag.fadeIn(500));
+          });
+          // remote fetches are pipelined, meaning only one request is used to
+          // load a remote template.
+          fragment('remote.html', {session:{username:'john.doe'}}, function(err, frag){
+            if (err) throw err;
+            $('body').append(frag.fadeIn(500));
+          });
 
-        // requesting a template which does not exist results in an error,
-        // indicated by the first callback argument.
-        fragment('not/found', function(err, frag){
-          if (err) throw err;
-        });
+          // any fragment can include mustache partials (even if they are remote)
+          fragment('remote-with-partial.html', {foo:"ikki"}, function(err, frag){
+            if (err) throw err;
+            $('body').append(frag.fadeIn(500));
+          });
+
+          // requesting a template which does not exist results in an error,
+          // indicated by the first callback argument.
+          fragment('not/found', function(err, frag){
+            if (err) throw err;
+          });
+        }
 
         // requesting a remote fragment works only for same host and port or if
         // CORS is supported by the host (browser) and server.
@@ -111,6 +124,7 @@
       Templates make use of the Mustache templating "language". If mustache.js
       is _not_ loaded, Mustache processing is not applied.
     -->
+    <div fragment="disclaimer">{{{html}}}</div>
     <li fragment="list-item">
       <a href="{{url}}">{{title}}</a>
     </li>

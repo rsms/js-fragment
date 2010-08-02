@@ -47,6 +47,19 @@
         var postsFrag;
         var siteTitle = document.title;
 
+        // this example does not function properly when run from a local file
+        // (file://).
+        if (document.location.protocol.indexOf('http') !== 0) {
+          $('body').append(fragment('disclaimer', {
+            html: '<h2>file:// not supported</h2>'+
+                  '<p>You are running this example from a local file — '+
+                  'loading remote resources (i.e. blog posts) does not work '+
+                  'in this case. It is a limitation of the web browser.</p>' +
+                  '<p>Please run this example through a regular web server.</p>'
+          }));
+          return;
+        }
+
         // add the about info to the right hand-side column
         $('#right-column').append(fragment('about'));
 
@@ -155,5 +168,6 @@
         </p>
       </div>
     </div>
+    <div fragment="disclaimer">{{{html}}}</div>
   </body>
 </html>
