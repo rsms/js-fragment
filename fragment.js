@@ -119,7 +119,7 @@
       throw new Error('fragment template not found "'+id+'"');
     }
     return frag;
-  }
+  };
 
   // Type of element which will wrap each fragment when there are multiple
   // children in one fragment
@@ -130,7 +130,7 @@
   exports.fragment.preprocessors = {};
 
   // Common regular expressions
-  var domnameReservedRE = /[^a-zA-Z0-9_-]+/g;
+  var domnameReservedRE = /[^a-zA-Z0-9_\-]+/g;
   function mkDOMName(title){
     return title.toLowerCase().replace(domnameReservedRE, '-')
       .replace(/\-+/g, '-');
@@ -244,7 +244,7 @@
     }
     // keep final content
     this.body = content;
-  }
+  };
   $.extend(exports.fragment.Template.prototype, {
     // creates a fragment
     createFragment: function(context, asHTML, noProcessing,
@@ -277,7 +277,7 @@
       q.update = function() {
         q.html(q.template.processFragment(q.template.body, q.context, false,
                                           dontExpandMustacheUntouchables));
-      }
+      };
       return q;
     },
 
@@ -393,7 +393,7 @@
       var t = new exports.fragment.Template($(this).remove());
       if (t.id) exports.fragment.template.cache[t.id] = t;
     });
-  }
+  };
 
   // When DOM is ready...
   $(function(){
@@ -401,8 +401,8 @@
     if (window.Showdown !== undefined
       && typeof Showdown.converter === 'function')
     {
-      var mdconverter = new Showdown.converter();
-      function md(text) { return mdconverter.makeHtml(text); }
+      var mdconverter = new Showdown.converter(),
+          md = function(text) { return mdconverter.makeHtml(text); };
       exports.fragment.preprocessors['text/markdown'] =
         exports.fragment.preprocessors['text/x-markdown'] = md;
     }
