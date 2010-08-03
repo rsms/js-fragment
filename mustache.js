@@ -33,14 +33,14 @@ var Mustache = function() {
       if (this.decodeCurlyBraces)
         template = template.replace(/%7[Bb]/g, '{').replace(/%7[Dd]/g, '}');
       // reset buffer & set context
-      if(!in_recursion) {
+      if (!in_recursion) {
         this.context = context;
         this.buffer = []; // TODO: make this non-lazy
       }
 
       // fail fast
-      if(template.length === 0) {
-        if(in_recursion) {
+      if (template.length === 0) {
+        if (in_recursion) {
           return template;
         } else {
           this.send(template);
@@ -73,7 +73,7 @@ var Mustache = function() {
     */
     render_pragmas: function(template) {
       // no pragmas
-      if(!this.includes("%", template)) {
+      if (!this.includes("%", template)) {
         return template;
       }
 
@@ -81,13 +81,13 @@ var Mustache = function() {
       var regex = new RegExp(this.otag + "%([\\w-]+) ?([\\w]+=[\\w]+)?" +
             this.ctag);
       return template.replace(regex, function(match, pragma, options) {
-        if(!that.pragmas_implemented[pragma]) {
+        if (!that.pragmas_implemented[pragma]) {
           throw({message: 
             "This implementation of mustache doesn't understand the '" +
             pragma + "' pragma"});
         }
         that.pragmas[pragma] = {};
-        if(options) {
+        if (options) {
           var opts = options.split("=");
           that.pragmas[pragma][opts[0]] = opts[1];
         }
@@ -102,12 +102,12 @@ var Mustache = function() {
     render_partial: function(name, context, partials) {
       name = this.trim(name);
       var partial;
-      if(!partials || (partial = partials[name]) === undefined) {
+      if (!partials || (partial = partials[name]) === undefined) {
         throw new Error("unknown_partial '" + name + "'");
       }
       if (!this.partialMaxDepth)
         throw new Error('max recursion depth for mustache partials');
-      //if(typeof context[name] === "object") {
+      //if (typeof context[name] === "object") {
       //  return this.render(partials[name], context[name], partials, true);
       //};
       --this.partialMaxDepth;
@@ -120,7 +120,7 @@ var Mustache = function() {
       Renders inverted (^) and normal (#) sections
     */
     render_section: function(template, context, partials) {
-      if(!this.includes("#", template) && !this.includes("^", template)) {
+      if (!this.includes("#", template) && !this.includes("^", template)) {
         return template;
       }
 
@@ -133,28 +133,28 @@ var Mustache = function() {
       // for each {{#foo}}{{/foo}} section do...
       return template.replace(regex, function(match, type, name, content) {
         var value = that.find(name, context);
-        if(type == "^") { // inverted section
-          if(!value || that.is_array(value) && value.length === 0) {
+        if (type === "^") { // inverted section
+          if (!value || that.is_array(value) && value.length === 0) {
             // false or empty list, render it
             return that.render(content, context, partials, true);
           } else {
             return "";
           }
-        } else if(type == "#") { // normal section
-          if(that.is_array(value)) { // Enumerable, Let's loop!
+        } else if (type === "#") { // normal section
+          if (that.is_array(value)) { // Enumerable, Let's loop!
             return that.map(value, function(row) {
               return that.render(content, that.create_context(row),
                 partials, true);
             }).join("");
-          } else if(that.is_object(value)) { // Object, Use it as subcontext!
+          } else if (that.is_object(value)) { // Object, Use it as subcontext!
             return that.render(content, that.create_context(value),
               partials, true);
-          } else if(typeof value === "function") {
+          } else if (typeof value === "function") {
             // higher order section
             return value.call(context, content, function(text) {
               return that.render(text, context, partials, true);
             });
-          } else if(value) { // boolean section
+          } else if (value) { // boolean section
             return that.render(content, context, partials, true);
           } else {
             return "";
@@ -196,12 +196,12 @@ var Mustache = function() {
       var lines = template.split("\n");
       for(var i = 0; i < lines.length; i++) {
         lines[i] = lines[i].replace(regex, tag_replace_callback, this);
-        if(!in_recursion) {
+        if (!in_recursion) {
           this.send(lines[i]);
         }
       }
 
-      if(in_recursion) {
+      if (in_recursion) {
         return lines.join("\n");
       }
     },
@@ -222,7 +222,7 @@ var Mustache = function() {
 
     escape_regex: function(text) {
       // thank you Simon Willison
-      if(!arguments.callee.sRE) {
+      if (!arguments.callee.sRE) {
         var specials = [
           '/', '.', '*', '+', '?', '|',
           '(', ')', '[', ']', '{', '}', '\\'
@@ -264,7 +264,7 @@ var Mustache = function() {
 
     /* includes tag */
     includes: function(needle, haystack) {
-      return haystack.indexOf(this.otag + needle) != -1;
+      return haystack.indexOf(this.otag + needle) !== -1;
     },
 
     /*
@@ -288,11 +288,11 @@ var Mustache = function() {
 
     // by @langalex, support for arrays of strings
     create_context: function(_context) {
-      if(this.is_object(_context)) {
+      if (this.is_object(_context)) {
         return _context;
       } else {
         var iterator = ".";
-        if(this.pragmas["IMPLICIT-ITERATOR"]) {
+        if (this.pragmas["IMPLICIT-ITERATOR"]) {
           iterator = this.pragmas["IMPLICIT-ITERATOR"].iterator;
         }
         var ctx = {};
@@ -302,7 +302,7 @@ var Mustache = function() {
     },
 
     is_object: function(a) {
-      return a && typeof a == "object";
+      return a && typeof a === "object";
     },
 
     is_array: function(a) {
@@ -320,7 +320,7 @@ var Mustache = function() {
       Why, why, why? Because IE. Cry, cry cry.
     */
     map: function(array, fn) {
-      if (typeof array.map == "function") {
+      if (typeof array.map === "function") {
         return array.map(fn);
       } else {
         var r = [];
