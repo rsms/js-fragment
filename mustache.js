@@ -172,7 +172,7 @@ var Mustache = function() {
 
       var new_regex = function() {
         return new RegExp(that.otag +
-          "(=|!|>|\\{|%)?([^\\/#\\^].+?)\\1?" +
+          "(=|!|>|\\{|%)?([^\\/#\\^](?:.+?|))\\1?" +
           that.ctag + "+", "g");
       };
 
