@@ -239,7 +239,8 @@ var Mustache = function() {
       from the view object
     */
     find: function(name, context) {
-      var names = this.trim(name).split('.'),
+      name = this.trim(name);
+      var names = name === '.' ? name : name.split('.'),
           value = context, i, parent = context;
       for (i=0;(name = names[i]);++i) {
         parent = value;
