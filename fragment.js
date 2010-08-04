@@ -272,7 +272,7 @@
         return html;
       }
       var q = htmlToJQuery(html);
-      q.context = context;
+      q.context = (typeof context === 'object') ? context : {};
       q.template = this;
       q.update = function() {
         q.html(q.template.processFragment(q.template.body, q.context, false,
