@@ -30,7 +30,7 @@ Requires jQuery >= 1.4.
 
 ## Caveats
 
-- If Mustache processing is enabled, you must use the `mustache.js` file bundled with `fragment.js` (the one in this repository), since fragment.js requires two things which are not in the regular mustache.js:
+- If Mustache processing is enabled, you must use the `mustacho.js` file bundled with `fragment.js` (the one in this repository), since fragment.js requires two things which are not in the regular mustache.js:
   - pre and post filter hooks (for partials) so we can perform our own processing (e.g. markdown)
   - preserve whitespace so to not mess upp markdown or other space and crlf sensitive markup.
 - Dependency: jQuery >= 1.4

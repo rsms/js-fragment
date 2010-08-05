@@ -1,3 +1,4 @@
+// oui:untangled
 (function(exports) {
   // first, some local helper functions (not exported)
 
@@ -153,16 +154,16 @@
     return text;
   }
   
-  containsMustacheRE = /\{\{[^\{\}]+\}\}/;
-  function textContainsMustache(text) {
-    return !!containsMustacheRE.test(text);
+  containsMustachoRE = /\{\{[^\{\}]+\}\}/;
+  function textContainsMustacho(text) {
+    return !!containsMustachoRE.test(text);
   }
 
   /**
    * Template prototype constructor
    */
   exports.fragment.Template = function(id, content, type) {
-    var p, needMustachePostHtmlization = false;
+    var p, needMustachoPostHtmlization = false;
     if (typeof id === 'object') {
       if (!(id instanceof jQuery))
         throw new Error('first argument must be a string or a jQuery object');
@@ -194,11 +195,11 @@
     // convert content to HTML rep
     content = jQueryToHTML(content);
     // check if content contains mustache markup
-    this.containsMustache = textContainsMustache(content);
+    this.containsMustacho = textContainsMustacho(content);
     // extra checks for non-html content types
     if (!typeIsHTML(type)) {
       // preprocess if not HTML and no mustache involved
-      if (!this.containsMustache) {
+      if (!this.containsMustacho) {
         content = content.replace(/&gt;/g, '>').replace(/&lt;/g, '<')
           .replace(/&amp;/g, '&');
         content = preprocess(content, type);
@@ -239,7 +240,7 @@
     if (this.type) {
       content = content.replace(/&gt;/g, '>').replace(/&lt;/g, '<')
         .replace(/&amp;/g, '&');
-    } else if (this.containsMustache) {
+    } else if (this.containsMustacho) {
       content = content.replace(/\{\{&gt;/g, '{{>');
     }
     // keep final content
@@ -248,9 +249,9 @@
   $.extend(exports.fragment.Template.prototype, {
     // creates a fragment
     createFragment: function(context, asHTML, noProcessing,
-                             dontExpandMustacheUntouchables) {
+                             dontExpandMustachoUntouchables) {
       if (typeof context !== 'object') {
-        preMustached = noProcessing;
+        preMustachoed = noProcessing;
         noProcessing = asHTML;
         asHTML = context;
         context = null;
@@ -260,7 +261,7 @@
         html = this.body;
       } else {
         html = this.processFragment(this.body, context, false,
-                                    dontExpandMustacheUntouchables);
+                                    dontExpandMustachoUntouchables);
       }
       if (this.head) {
         html = this.head + html;
@@ -276,22 +277,22 @@
       q.template = this;
       q.update = function() {
         q.html(q.template.processFragment(q.template.body, q.context, false,
-                                          dontExpandMustacheUntouchables));
+                                          dontExpandMustachoUntouchables));
       };
       return q;
     },
 
     // Process a template with context and return HTML
-    processFragment: function(html, context, preMustached,
-                              dontExpandMustacheUntouchables) {
+    processFragment: function(html, context, preMustachoed,
+                              dontExpandMustachoUntouchables) {
       if (typeof html !== 'string')
         throw new Error("processFragment: bad input -- typeof html !== 'string'");
       // always run through mustache if available
-      if (window.Mustache && !preMustached) {
+      if (window.mustacho && !preMustachoed) {
         var ctx = $.extend(true, {_template: this}, exports.context, context);
         var partials = exports.fragment.template.cache;
-        html = Mustache.to_html(html, ctx, partials,
-                                dontExpandMustacheUntouchables);
+        html = mustacho.render(html, ctx, partials,
+                               dontExpandMustachoUntouchables);
         if (!html) throw new Error('mustache failed');
       }
       // content converter
@@ -310,7 +311,7 @@
       return html;
     },
     
-    preMustacheFilter: function(mustacheRenderer, context, partials) {
+    preMustachoFilter: function(mustacheRenderer, context, partials) {
       if (this.type) {
         // this.type is something if the content is not HTML, in which case we
         // don't want the head or tail
@@ -320,8 +321,8 @@
       }
     },
 
-    postMustacheFilter: function(text, mustacheRenderer, context, partials) {
-      var html = this.processFragment(text, context, /*preMustached = */true);
+    postMustachoFilter: function(text, mustacheRenderer, context, partials) {
+      var html = this.processFragment(text, context, /*preMustachoed = */true);
       // Uncomment to add head and tail:
       //if (this.type) html = this.head + html + this.tail;
       return html;
