@@ -2,6 +2,8 @@
 
 Client-side templating for modern thinkers.
 
+Requires jQuery 1.4 or later. Tested in modern browsers (Chrome, Safari, Firefox). Patches are welcome.
+
 ## Example
 
     <script type="text/javascript">
@@ -25,8 +27,6 @@ Client-side templating for modern thinkers.
     </div>
 
 Read [the introduction](http://hunch.se/js-fragment/) or look at the [source of some examples](http://github.com/rsms/js-fragment/blob/master/examples/basics.html) and [try them out in your browser](http://hunch.se/js-fragment/examples/basics.html).
-
-Requires jQuery >= 1.4.
 
 ## Caveats
 
